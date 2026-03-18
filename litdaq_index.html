@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LITDAQ — Litigation Asset Exchange</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090f;--card:#0d1117;--cardh:#111827;
+  --b:#1a2235;--bl:#1e2d42;
+  --gold:#d4a843;--goldt:#f0c96e;--goldd:#5c3d0a;
+  --blue:#3b82f6;--green:#10b981;--red:#ef4444;--purple:#a855f7;
+  --text:#e2e8f0;--ts:#64748b;--tm:#334155;
+  --mono:'DM Mono',monospace;
+  --display:'Playfair Display',serif;
+  --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:13px;min-height:100vh}
+
+/* GATE */
+#gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px 16px;position:relative;overflow:hidden}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(var(--b) 1px,transparent 1px),linear-gradient(90deg,var(--b) 1px,transparent 1px);background-size:40px 40px;opacity:0.35}
+.glow{position:absolute;top:10%;left:50%;transform:translateX(-50%);width:600px;height:300px;background:radial-gradient(ellipse,#d4a84310,transparent 70%);pointer-events:none}
+.gate-inner{position:relative;width:100%;max-width:580px;display:flex;flex-direction:column;align-items:center;gap:24px}
+.gate-logo{display:flex;align-items:center;gap:12px}
+.gate-logo-icon{width:40px;height:40px;border-radius:10px;background:var(--goldd);border:0.5px solid #d4a84355;display:flex;align-items:center;justify-content:center}
+.gate-logo-name{font-family:var(--display);font-size:28px;font-weight:900;color:var(--goldt);letter-spacing:0.08em}
+.gate-logo-sub{font-size:10px;color:var(--ts);letter-spacing:0.1em;text-transform:uppercase}
+.gate-card{background:var(--card);border:0.5px solid var(--b);border-radius:16px;width:100%;overflow:hidden}
+.gate-warning{display:flex;align-items:flex-start;gap:12px;background:#d4a84308;border-bottom:0.5px solid #d4a84322;padding:16px 24px}
+.gate-warning-icon{width:22px;height:22px;border-radius:50%;background:var(--goldd);border:0.5px solid #d4a84355;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:var(--goldt)}
+.gate-warning-text{font-size:11px;color:#d4a84399;line-height:1.65}
+.gate-warning-text strong{color:var(--goldt)}
+.gate-top{padding:24px 24px 16px}
+.gate-title{font-family:var(--display);font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px}
+.gate-sub{font-size:12px;color:var(--ts);line-height:1.6}
+.gate-cats{padding:0 24px 16px;display:flex;flex-direction:column;gap:8px}
+.gate-cat-label{font-size:10px;font-weight:600;color:var(--tm);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2px}
+.cat{border:0.5px solid var(--b);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all 0.15s;display:flex;align-items:flex-start;gap:12px}
+.cat:hover{border-color:#d4a84355;background:#d4a84306}
+.cat.sel{border-color:var(--gold);background:#d4a84309}
+.cat-radio{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--b);flex-shrink:0;margin-top:2px;transition:all 0.15s;display:flex;align-items:center;justify-content:center}
+.cat.sel .cat-radio{border-color:var(--gold);background:var(--gold)}
+.cat-dot{width:6px;height:6px;border-radius:50%;background:#07090f;display:none}
+.cat.sel .cat-dot{display:block}
+.cat-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.cat-desc{font-size:11px;color:var(--ts);line-height:1.5}
+.cat-criteria{font-size:10px;color:#d4a84388;margin-top:5px;padding-top:5px;border-top:0.5px solid var(--b);display:none}
+.cat.sel .cat-criteria{display:block}
+.gate-decls{padding:16px 24px;border-top:0.5px solid var(--b);display:none;flex-direction:column;gap:10px}
+.decl-label{font-size:10px;font-weight:600;color:var(--tm);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2px}
+.decl{display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.decl-box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--b);flex-shrink:0;margin-top:1px;transition:all 0.15s;display:flex;align-items:center;justify-content:center}
+.decl.chk .decl-box{border-color:var(--gold);background:var(--gold)}
+.decl-tick{font-size:10px;color:#07090f;font-weight:700;display:none}
+.decl.chk .decl-tick{display:block}
+.decl-text{font-size:11px;color:var(--ts);line-height:1.55}
+.decl-text strong{color:var(--text)}
+.gate-footer{padding:16px 24px;border-top:0.5px solid var(--b);display:flex;flex-direction:column;gap:10px}
+.proceed-btn{background:var(--gold);color:#07090f;font-weight:700;font-size:13px;border:none;border-radius:8px;padding:13px;cursor:pointer;font-family:var(--body);letter-spacing:0.04em;transition:opacity 0.15s;opacity:0.35;pointer-events:none;width:100%}
+.proceed-btn.on{opacity:1;pointer-events:auto}
+.proceed-btn.on:hover{opacity:0.9}
+.retail-btn{background:transparent;border:0.5px solid var(--b);color:var(--ts);font-size:12px;border-radius:8px;padding:10px;cursor:pointer;font-family:var(--body);transition:all 0.15s;width:100%}
+.retail-btn:hover{border-color:var(--red);color:var(--red)}
+.gate-legal{font-size:10px;color:var(--tm);line-height:1.6;text-align:center}
+.gate-legal a{color:var(--ts);text-decoration:underline;cursor:pointer}
+
+/* RETAIL BLOCKED */
+#retail{min-height:100vh;display:none;align-items:center;justify-content:center;padding:30px 16px;position:relative}
+.retail-card{position:relative;background:var(--card);border:0.5px solid #ef444433;border-radius:16px;max-width:440px;padding:40px 32px;text-align:center;display:flex;flex-direction:column;gap:16px}
+.retail-icon{width:52px;height:52px;border-radius:50%;background:#ef444415;border:0.5px solid #ef444433;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:22px;color:var(--red)}
+.retail-title{font-family:var(--display);font-size:20px;font-weight:700;color:var(--text)}
+.retail-text{font-size:12px;color:var(--ts);line-height:1.75}
+.retail-back{background:transparent;border:0.5px solid var(--b);color:var(--ts);font-size:12px;border-radius:8px;padding:10px 20px;cursor:pointer;font-family:var(--body);margin-top:4px}
+
+/* LOGIN */
+#login{min-height:100vh;display:none;align-items:center;justify-content:center;padding:30px 16px;position:relative;overflow:hidden}
+.login-card{position:relative;background:var(--card);border:0.5px solid var(--b);border-radius:16px;width:100%;max-width:400px;padding:36px;display:flex;flex-direction:column;gap:20px}
+.login-title{font-family:var(--display);font-size:20px;font-weight:700;text-align:center}
+.login-sub{font-size:11px;color:var(--ts);text-align:center}
+.login-cat-badge{background:#d4a84309;border:0.5px solid #d4a84333;border-radius:6px;padding:7px 12px;font-size:11px;color:var(--goldt);text-align:center}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:11px;font-weight:600;color:var(--ts);letter-spacing:0.06em;text-transform:uppercase}
+.form-input{background:var(--bg);border:0.5px solid var(--b);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--body);width:100%;transition:border-color 0.2s;outline:none}
+.form-input:focus{border-color:#d4a84366}
+.form-input::placeholder{color:var(--tm)}
+.login-btn{background:var(--gold);color:#07090f;font-weight:700;font-size:13px;border:none;border-radius:8px;padding:12px;cursor:pointer;font-family:var(--body);transition:opacity 0.15s;width:100%}
+.login-btn:hover{opacity:0.9}
+.login-error{font-size:11px;color:var(--red);background:#ef444415;border:0.5px solid #ef444433;border-radius:6px;padding:8px 12px;text-align:center;display:none}
+.demo-box{background:var(--bg);border:0.5px solid var(--b);border-radius:8px;padding:12px 14px}
+.demo-title{font-size:10px;font-weight:600;color:var(--tm);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px}
+.demo-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:11px}
+.demo-email{color:var(--ts);font-family:var(--mono)}
+.demo-use{color:var(--blue);cursor:pointer;padding:2px 8px;border-radius:4px;border:0.5px solid #3b82f633;font-size:10px}
+.demo-use:hover{background:#3b82f611}
+.login-legal{font-size:10px;color:var(--tm);text-align:center;line-height:1.6}
+.login-legal a{color:var(--ts);cursor:pointer;text-decoration:underline}
+
+/* PORTAL */
+#portal{display:none;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:var(--card);border-bottom:0.5px solid var(--b);position:sticky;top:0;z-index:100}
+.topbar-logo{display:flex;align-items:center;gap:10px}
+.topbar-icon{width:26px;height:26px;border-radius:7px;background:var(--goldd);border:0.5px solid #d4a84355;display:flex;align-items:center;justify-content:center}
+.topbar-name{font-family:var(--display);font-size:17px;font-weight:900;color:var(--goldt);letter-spacing:0.08em}
+.topbar-sub{font-size:10px;color:var(--ts);letter-spacing:0.06em}
+.divv{width:0.5px;height:18px;background:var(--b);margin:0 2px}
+.aigle-chip{background:var(--goldd);border:0.5px solid #d4a84355;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--goldt);letter-spacing:0.08em;font-family:var(--mono)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.live-wrap{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ts)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.user-badge{display:flex;align-items:center;gap:8px;background:var(--cardh);border:0.5px solid var(--b);border-radius:8px;padding:5px 12px}
+.user-av{width:22px;height:22px;border-radius:50%;background:var(--goldd);border:0.5px solid #d4a84355;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--goldt)}
+.user-type{font-size:10px;padding:2px 7px;border-radius:4px;background:#10b98115;border:0.5px solid #10b98133;color:var(--green);font-weight:600}
+.logout-btn{background:transparent;border:0.5px solid var(--b);color:var(--ts);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:var(--body)}
+.portal-body{display:flex;flex:1}
+.sidebar{width:200px;background:var(--card);border-right:0.5px solid var(--b);padding:16px 0;flex-shrink:0}
+.sb-label{font-size:10px;font-weight:600;color:var(--tm);letter-spacing:0.08em;text-transform:uppercase;padding:0 16px;margin-bottom:6px;margin-top:14px}
+.sb-label:first-child{margin-top:0}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 16px;font-size:12px;color:var(--ts);cursor:pointer;transition:all 0.12s;border-left:2px solid transparent}
+.sb-item.active{color:var(--text);background:var(--cardh);border-left-color:var(--gold);font-weight:600}
+.sb-item:hover:not(.active){color:var(--text);background:#ffffff05}
+.sb-icon{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+.main{flex:1;padding:16px;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.page{display:none;flex-direction:column;gap:12px}
+.page.active{display:flex}
+.ph{margin-bottom:4px}
+.ph h1{font-family:var(--display);font-size:22px;font-weight:700;margin-bottom:4px}
+.ph p{font-size:12px;color:var(--ts)}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.metric{background:var(--card);border:0.5px solid var(--b);border-radius:10px;padding:14px 16px}
+.m-label{font-size:10px;color:var(--ts);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px}
+.m-val{font-size:20px;font-weight:700;font-family:var(--mono);letter-spacing:-0.02em;margin-bottom:4px}
+.m-chg{font-size:11px}
+.card{background:var(--card);border:0.5px solid var(--b);border-radius:10px;overflow:hidden}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--b)}
+.card-title{font-size:10px;font-weight:600;color:var(--ts);letter-spacing:0.08em;text-transform:uppercase}
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:0.04em}
+.bg{background:#10b98122;border:0.5px solid #10b98144;color:var(--green)}
+.bb{background:#3b82f622;border:0.5px solid #3b82f644;color:var(--blue)}
+.ba{background:#d4a84322;border:0.5px solid #d4a84344;color:var(--goldt)}
+.bp{background:#a855f722;border:0.5px solid #a855f744;color:var(--purple)}
+.bx{background:#33333322;border:0.5px solid #44444444;color:var(--ts)}
+.two-col{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+.bot-row{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+.port-item{padding:0 0 10px}
+.port-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.port-lbl{display:flex;align-items:center;gap:7px;font-size:12px}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.port-vals{display:flex;gap:12px;font-size:12px;font-family:var(--mono)}
+.pbg{height:5px;background:var(--b);border-radius:3px;overflow:hidden}
+.pb{height:100%;border-radius:3px;transition:width 1.2s ease}
+.lbs-hrow{display:grid;grid-template-columns:1fr 70px 60px 60px 70px 72px;padding:6px 14px;border-bottom:0.5px solid var(--b)}
+.lbs-hcell{font-size:10px;color:var(--ts);font-weight:600;letter-spacing:0.06em;text-transform:uppercase}
+.lbs-row{display:grid;grid-template-columns:1fr 70px 60px 60px 70px 72px;padding:11px 14px;border-bottom:0.5px solid var(--b);cursor:pointer;transition:background 0.12s}
+.lbs-row:last-child{border-bottom:none}
+.lbs-row:hover{background:var(--cardh)}
+.lbs-id{font-size:12px;font-weight:600;font-family:var(--mono);margin-bottom:2px}
+.lbs-sub{font-size:10px;color:var(--ts)}
+.lbs-yield{font-size:14px;font-weight:700;font-family:var(--mono);color:var(--goldt)}
+.lbs-cell{font-size:12px;font-family:var(--mono);color:var(--text)}
+.lbs-cells{font-size:12px;font-family:var(--mono);color:var(--ts)}
+.news-item{padding:9px 14px;border-bottom:0.5px solid var(--b)}
+.news-item:last-child{border-bottom:none}
+.news-tag{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-block;margin-bottom:4px}
+.news-title{font-size:12px;line-height:1.45;margin-bottom:3px}
+.news-meta{font-size:10px;color:var(--ts)}
+.econ-grid{padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.econ-item{background:var(--bg);border:0.5px solid var(--b);border-radius:8px;padding:10px 12px;transition:border-color 0.3s}
+.econ-item.live{border-color:#10b98144}
+.econ-name{font-size:10px;color:var(--ts);margin-bottom:4px}
+.econ-val{font-size:15px;font-weight:700;font-family:var(--mono);margin-bottom:3px}
+.econ-chg{font-size:10px}
+.rate-sec{padding:8px 14px 14px}
+.rate-label{font-size:10px;color:var(--ts);margin-bottom:8px}
+.rate-chart{display:flex;align-items:flex-end;gap:6px;height:56px}
+.rate-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.rate-b{border-radius:2px 2px 0 0;width:100%;transition:height 1s ease}
+.rate-d{font-size:9px;color:var(--tm)}
+.aigle-strip{display:flex;align-items:center;gap:10px;background:#d4a84308;border:0.5px solid #d4a84322;border-radius:8px;padding:8px 14px;margin:10px 14px;font-size:11px;color:#d4a84399}
+.aigle-si{width:18px;height:18px;border-radius:4px;background:var(--goldd);border:0.5px solid #d4a84344;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--goldt);flex-shrink:0}
+.portal-footer{padding:8px 14px;font-size:10px;color:var(--tm);border-top:0.5px solid var(--b);display:flex;justify-content:space-between}
+.highlight{background:#d4a84309;border:0.5px solid #d4a84333;border-radius:10px;padding:14px 18px}
+.highlight-title{font-size:12px;font-weight:700;color:var(--goldt);margin-bottom:4px}
+.highlight-text{font-size:12px;color:#d4a84388;line-height:1.6}
+.doc-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:0.5px solid var(--b)}
+.doc-row:last-child{border-bottom:none}
+.doc-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+.doc-name{font-size:12px;font-weight:600;margin-bottom:2px}
+.doc-meta{font-size:10px;color:var(--ts)}
+.doc-btn{background:transparent;border:0.5px solid var(--b);color:var(--ts);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-family:var(--body);transition:all 0.15s}
+.doc-btn:hover{border-color:var(--gold);color:var(--goldt)}
+.eoi-form{padding:20px;display:flex;flex-direction:column;gap:14px}
+.eoi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.eoi-label{font-size:11px;font-weight:600;color:var(--ts);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px}
+.eoi-input{background:var(--bg);border:0.5px solid var(--b);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--body);width:100%;outline:none;transition:border-color 0.2s}
+.eoi-input:focus{border-color:#d4a84366}
+.eoi-select{background:var(--bg);border:0.5px solid var(--b);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--body);width:100%;outline:none}
+.eoi-submit{background:var(--gold);color:#07090f;font-weight:700;font-size:13px;border:none;border-radius:8px;padding:12px;cursor:pointer;font-family:var(--body)}
+.eoi-success{display:none;text-align:center;padding:30px;flex-direction:column;gap:12px}
+.eoi-success-title{font-family:var(--display);font-size:18px;font-weight:700;color:var(--green)}
+.eoi-success-sub{font-size:12px;color:var(--ts);line-height:1.6}
+.contact-form{padding:20px;display:flex;flex-direction:column;gap:14px}
+.contact-submit{background:var(--gold);color:#07090f;font-weight:700;font-size:13px;border:none;border-radius:8px;padding:12px;cursor:pointer;font-family:var(--body)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn 0.35s ease forwards}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+</style>
+</head>
+<body>
+
+<!-- REGULATORY GATE -->
+<div id="gate">
+  <div class="grid-bg"></div>
+  <div class="glow"></div>
+  <div class="gate-inner fade-in">
+    <div class="gate-logo">
+      <div class="gate-logo-icon">
+        <svg width="20" height="20" viewBox="0 0 12 12" fill="none">
+          <path d="M2 10L6 2L10 10" stroke="#d4a843" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3.5 7.5H8.5" stroke="#d4a843" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="gate-logo-name">LITDAQ</div>
+        <div class="gate-logo-sub">Litigation Asset Exchange · Powered by AiGLe</div>
+      </div>
+    </div>
+    <div class="gate-card">
+      <div class="gate-warning">
+        <div class="gate-warning-icon">!</div>
+        <div class="gate-warning-text">
+          <strong>Important — Restricted financial promotion.</strong> This website contains a financial promotion relating to Litigation-Backed Securities (LBS). It is communicated by LITDAQ. These investments are not FCA-regulated and capital is at risk. This promotion may only be accessed by persons legally permitted to receive it under the Financial Promotion Order 2005.
+        </div>
+      </div>
+      <div class="gate-top">
+        <div class="gate-title">Confirm your investor status</div>
+        <div class="gate-sub">Under FSMA 2000 (Financial Promotion) Order 2005, this communication may only be directed at certain categories of investor. Please confirm which category applies to you before proceeding.</div>
+      </div>
+      <div class="gate-cats">
+        <div class="gate-cat-label">I confirm that I am (select one)</div>
+        <div class="cat" id="cat-inst" onclick="selectCat('inst',this)">
+          <div class="cat-radio"><div class="cat-dot"></div></div>
+          <div>
+            <div class="cat-name">Institutional / Professional investor</div>
+            <div class="cat-desc">A bank, investment firm, insurance company, pension fund, fund manager, or other FCA-regulated entity. Or an entity whose sole purpose is to invest in securities.</div>
+            <div class="cat-criteria">Eligible under FPO 2005 Article 49 — Investment Professionals</div>
+          </div>
+        </div>
+        <div class="cat" id="cat-hnw" onclick="selectCat('hnw',this)">
+          <div class="cat-radio"><div class="cat-dot"></div></div>
+          <div>
+            <div class="cat-name">Certified High Net Worth individual</div>
+            <div class="cat-desc">Annual income of £100,000+ in the last financial year, or net assets (excluding primary residence and pension) of £250,000+ throughout the last financial year.</div>
+            <div class="cat-criteria">Eligible under FPO 2005 Article 48 — HNW declaration required</div>
+          </div>
+        </div>
+        <div class="cat" id="cat-soph" onclick="selectCat('soph',this)">
+          <div class="cat-radio"><div class="cat-dot"></div></div>
+          <div>
+            <div class="cat-name">Self-certified sophisticated investor</div>
+            <div class="cat-desc">Made at least one investment in an unlisted company in the past two years; or director of a company with turnover of £1M+; or member of a business angel network or syndicate.</div>
+            <div class="cat-criteria">Eligible under FPO 2005 Article 50A — self-certification required</div>
+          </div>
+        </div>
+        <div class="cat" id="cat-rest" onclick="selectCat('rest',this)">
+          <div class="cat-radio"><div class="cat-dot"></div></div>
+          <div>
+            <div class="cat-name">Certified restricted investor</div>
+            <div class="cat-desc">Does not invest more than 10% of net investable assets in non-mainstream pooled investments or unlisted securities in any 12-month period.</div>
+            <div class="cat-criteria">Eligible under FPO 2005 Article 50 — investment limit applies</div>
+          </div>
+        </div>
+      </div>
+      <div class="gate-decls" id="gate-decls">
+        <div class="decl-label">Required declarations — please confirm all four</div>
+        <div class="decl" id="d1" onclick="toggleDecl(this)"><div class="decl-box"><div class="decl-tick">✓</div></div><div class="decl-text">I confirm I fall within the investor category selected above and understand this communication is exempt from the general restriction on financial promotions under section 21 of FSMA 2000.</div></div>
+        <div class="decl" id="d2" onclick="toggleDecl(this)"><div class="decl-box"><div class="decl-tick">✓</div></div><div class="decl-text">I understand that <strong>Litigation-Backed Securities are not FCA-regulated investments</strong>, are not covered by the FSCS, and that my capital is at risk. Past performance of litigation claims is not a reliable indicator of future returns.</div></div>
+        <div class="decl" id="d3" onclick="toggleDecl(this)"><div class="decl-box"><div class="decl-tick">✓</div></div><div class="decl-text">I confirm I am <strong>not a retail client</strong> as defined by FCA COBS 3.4 and have not been classified as such by any FCA-regulated firm for the purposes of this type of investment.</div></div>
+        <div class="decl" id="d4" onclick="toggleDecl(this)"><div class="decl-box"><div class="decl-tick">✓</div></div><div class="decl-text">I understand any investment will be subject to the relevant LBS term sheet and subscription agreement, and I have the ability to bear a total loss of the amount invested.</div></div>
+      </div>
+      <div class="gate-footer">
+        <button class="proceed-btn" id="proceed-btn" onclick="proceedToLogin()">Confirm and access LITDAQ investor portal →</button>
+        <button class="retail-btn" onclick="showRetail()">I am a retail investor — I do not qualify</button>
+        <div class="gate-legal">By proceeding you agree to our <a href="/terms">Terms of access</a> and <a href="/privacy">Privacy policy</a>. Your confirmation is logged for regulatory record-keeping. LITDAQ is powered by AiGLe. Legal services: Peter Maughan Law (SRA regulated). Expert criteria: The Rivermead Partnership.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RETAIL BLOCKED -->
+<div id="retail" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:30px 16px;position:relative">
+  <div class="grid-bg"></div>
+  <div class="retail-card fade-in">
+    <div class="retail-icon">✕</div>
+    <div class="retail-title">Not available to retail investors</div>
+    <div class="retail-text">Litigation-Backed Securities may only be promoted to institutional investors, certified high net worth individuals, sophisticated investors, and certified restricted investors under the Financial Promotion Order 2005.<br><br>If you believe you meet one of these criteria, please contact us to discuss eligibility. If you are interested in regulated investment products, please consult an FCA-authorised financial adviser.</div>
+    <a href="/contact" style="background:var(--card);border:0.5px solid var(--b);color:var(--ts);font-size:12px;border-radius:8px;padding:10px 20px;cursor:pointer;font-family:var(--body);text-decoration:none;text-align:center;display:block">Contact us about eligibility</a>
+    <button class="retail-back" onclick="showGate()">← Go back</button>
+    <div class="gate-legal">LITDAQ · Peter Maughan Law (SRA) · compliance@litdaq.com</div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:30px 16px;position:relative;overflow:hidden">
+  <div class="grid-bg"></div>
+  <div class="glow"></div>
+  <div class="login-card fade-in">
+    <div style="text-align:center">
+      <div class="gate-logo" style="justify-content:center;margin-bottom:8px">
+        <div class="gate-logo-icon" style="width:32px;height:32px;border-radius:9px">
+          <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M2 10L6 2L10 10" stroke="#d4a843" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 7.5H8.5" stroke="#d4a843" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <span class="gate-logo-name" style="font-size:22px">LITDAQ</span>
+      </div>
+      <div class="login-title" style="font-size:16px;font-family:var(--body);font-weight:600">Investor portal</div>
+      <div class="login-sub">Sign in to access LBS documentation and listings</div>
+    </div>
+    <div class="login-cat-badge" id="login-cat-badge">✓ Eligibility confirmed — Institutional investor</div>
+    <div class="form-group"><div class="form-label">Email address</div><input class="form-input" type="email" id="login-email" placeholder="you@yourfirm.com"/></div>
+    <div class="form-group"><div class="form-label">Password</div><input class="form-input" type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <div id="login-error" class="login-error">Incorrect email or password. Try a demo account below.</div>
+    <button class="login-btn" onclick="doLogin()">Sign in to portal →</button>
+    <div class="demo-box">
+      <div class="demo-title">Demo accounts (password: demo1234)</div>
+      <div class="demo-row"><span class="demo-email">investor@blackrock.com</span><span class="demo-use" onclick="fillDemo('investor@blackrock.com')">Use</span></div>
+      <div class="demo-row"><span class="demo-email">fund@stonehage.com</span><span class="demo-use" onclick="fillDemo('fund@stonehage.com')">Use</span></div>
+      <div class="demo-row"><span class="demo-email">credit@barings.com</span><span class="demo-use" onclick="fillDemo('credit@barings.com')">Use</span></div>
+    </div>
+    <div class="login-legal">Don't have an account? <a href="/contact">Request access</a><br><a onclick="showGate()" style="cursor:pointer">← Back to eligibility check</a></div>
+  </div>
+</div>
+
+<!-- PORTAL -->
+<div id="portal" style="display:none;flex-direction:column;min-height:100vh">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-icon">
+        <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2 10L6 2L10 10" stroke="#d4a843" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 7.5H8.5" stroke="#d4a843" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div>
+      <span class="topbar-name">LITDAQ</span>
+      <span class="topbar-sub">LITIGATION ASSET EXCHANGE</span>
+      <div class="divv"></div>
+      <span style="font-size:10px;color:var(--ts)">powered by</span>
+      <span class="aigle-chip">AiGLe</span>
+    </div>
+    <div class="topbar-right">
+      <div class="live-wrap"><div class="live-dot"></div>Live data</div>
+      <div class="user-badge">
+        <div class="user-av" id="p-av">JB</div>
+        <span id="p-name" style="font-size:12px">James Brown</span>
+        <span class="user-type" id="p-type">Institutional</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+  <div class="portal-body">
+    <div class="sidebar">
+      <div class="sb-label">Overview</div>
+      <div class="sb-item active" onclick="showPage('dashboard',this)"><div class="sb-icon" style="background:#d4a84322;border:0.5px solid #d4a84344"></div>Dashboard</div>
+      <div class="sb-item" onclick="showPage('lbs',this)"><div class="sb-icon" style="background:#10b98122;border:0.5px solid #10b98144"></div>LBS listings</div>
+      <div class="sb-item" onclick="showPage('docs',this)"><div class="sb-icon" style="background:#3b82f622;border:0.5px solid #3b82f644"></div>Documents</div>
+      <div class="sb-label">Actions</div>
+      <div class="sb-item" onclick="showPage('eoi',this)"><div class="sb-icon" style="background:#a855f722;border:0.5px solid #a855f744"></div>Express interest</div>
+      <div class="sb-item" onclick="showPage('contact',this)"><div class="sb-icon" style="background:#33333322;border:0.5px solid #44444444"></div>Contact us</div>
+      <div class="sb-label">Market data</div>
+      <div class="sb-item" onclick="showPage('econ',this)"><div class="sb-icon" style="background:#3b82f622;border:0.5px solid #3b82f644"></div>Economics</div>
+      <div class="sb-item" onclick="showPage('news',this)"><div class="sb-icon" style="background:#a855f722;border:0.5px solid #a855f744"></div>Market news</div>
+    </div>
+    <div class="main">
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="ph"><h1 id="p-greeting">Welcome back</h1><p id="p-sub">Your LITDAQ investor overview</p></div>
+        <div class="highlight">
+          <div class="highlight-title">Motor Finance LBS-MF-001 — closing in 14 days</div>
+          <div class="highlight-text">71% subscribed · £350K remaining · 14.5% target yield · AiGLe grade A– · ATE insured · <span style="color:var(--goldt);cursor:pointer" onclick="showPage('eoi',document.querySelectorAll('.sb-item')[3])">Express interest →</span></div>
+        </div>
+        <div class="metrics">
+          <div class="metric"><div class="m-label">LBS available</div><div class="m-val" style="color:var(--goldt)">3</div><div class="m-chg" style="color:var(--ts)">2 open · 1 pipeline</div></div>
+          <div class="metric"><div class="m-label">Avg target yield</div><div class="m-val" style="color:var(--goldt)">14.2%</div><div class="m-chg" style="color:var(--green)">vs 4.68% gilt</div></div>
+          <div class="metric"><div class="m-label">Min investment</div><div class="m-val">£100K</div><div class="m-chg" style="color:var(--ts)">per LBS tranche</div></div>
+          <div class="metric"><div class="m-label">Capital protection</div><div class="m-val" style="color:var(--green)">ATE</div><div class="m-chg" style="color:var(--ts)">+ CPI insurance</div></div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hdr"><span class="card-title">Portfolio breakdown</span><span class="badge bb">Live</span></div>
+            <div style="padding:14px 16px;display:flex;flex-direction:column;gap:11px">
+              <div class="port-item"><div class="port-top"><div class="port-lbl"><div class="dot" style="background:#3b82f6"></div>Motor finance</div><div class="port-vals"><span style="color:var(--ts)">£1.76M</span><span style="color:#3b82f6;font-weight:700">42%</span></div></div><div class="pbg"><div class="pb" style="width:42%;background:#3b82f6"></div></div></div>
+              <div class="port-item"><div class="port-top"><div class="port-lbl"><div class="dot" style="background:#10b981"></div>Energy broker</div><div class="port-vals"><span style="color:var(--ts)">£1.30M</span><span style="color:#10b981;font-weight:700">31%</span></div></div><div class="pbg"><div class="pb" style="width:31%;background:#10b981"></div></div></div>
+              <div class="port-item"><div class="port-top"><div class="port-lbl"><div class="dot" style="background:#d4a843"></div>Irr. lending</div><div class="port-vals"><span style="color:var(--ts)">£0.76M</span><span style="color:#d4a843;font-weight:700">18%</span></div></div><div class="pbg"><div class="pb" style="width:18%;background:#d4a843"></div></div></div>
+              <div class="port-item"><div class="port-top"><div class="port-lbl"><div class="dot" style="background:#ec4899"></div>PPI / Plevin</div><div class="port-vals"><span style="color:var(--ts)">£0.38M</span><span style="color:#ec4899;font-weight:700">9%</span></div></div><div class="pbg"><div class="pb" style="width:9%;background:#ec4899"></div></div></div>
+            </div>
+            <div class="aigle-strip"><div class="aigle-si">A</div><span>All LBS graded by <strong style="color:var(--goldt)">AiGLe</strong> · Rivermead quantum · ECD barrister opinions · Court precedents</span></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><span class="card-title">LBS subscription progress</span><span class="badge bg">Live</span></div>
+            <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>LBS-MF-001 Motor Finance</span><span style="color:var(--goldt);font-family:var(--mono)">71%</span></div><div class="pbg" style="height:6px"><div class="pb" style="width:71%;background:#3b82f6;height:100%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>LBS-EN-002 Energy Broker</span><span style="color:var(--goldt);font-family:var(--mono)">62%</span></div><div class="pbg" style="height:6px"><div class="pb" style="width:62%;background:#10b981;height:100%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>LBS-RC-001 Irr. Lending</span><span style="color:var(--ts);font-family:var(--mono)">100%</span></div><div class="pbg" style="height:6px"><div class="pb" style="width:100%;background:var(--ts);height:100%"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LBS PAGE -->
+      <div class="page" id="page-lbs">
+        <div class="ph"><h1>LBS listings</h1><p>AiGLe-graded Litigation-Backed Securities available on LITDAQ</p></div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">All LBS instruments</span><span class="badge bg">3 active</span></div>
+          <div class="lbs-hrow"><span class="lbs-hcell">LBS / Type</span><span class="lbs-hcell">Yield</span><span class="lbs-hcell">Grade</span><span class="lbs-hcell">Raised</span><span class="lbs-hcell">Target</span><span class="lbs-hcell">Maturity</span></div>
+          <div class="lbs-row" onclick="showPage('eoi',document.querySelectorAll('.sb-item')[3])">
+            <div><div class="lbs-id">LBS-MF-001</div><div class="lbs-sub">Motor Finance · Series A · ATE+CPI insured</div></div>
+            <div class="lbs-yield">14.5%</div>
+            <div><span class="badge bg">A–</span></div>
+            <div class="lbs-cell">£850K</div>
+            <div class="lbs-cells">£1.20M</div>
+            <div style="font-size:11px;color:var(--ts)">Dec 2027</div>
+          </div>
+          <div class="lbs-row" onclick="showPage('eoi',document.querySelectorAll('.sb-item')[3])">
+            <div><div class="lbs-id">LBS-EN-002</div><div class="lbs-sub">Energy Broker · Series A · ATE+CPI insured</div></div>
+            <div class="lbs-yield">13.8%</div>
+            <div><span class="badge bg">A</span></div>
+            <div class="lbs-cell">£620K</div>
+            <div class="lbs-cells">£1.00M</div>
+            <div style="font-size:11px;color:var(--ts)">Mar 2028</div>
+          </div>
+          <div class="lbs-row">
+            <div><div class="lbs-id">LBS-RC-001</div><div class="lbs-sub">Irr. Lending · Series A · ATE+CPI insured</div></div>
+            <div class="lbs-yield">15.1%</div>
+            <div><span class="badge bb">B+</span></div>
+            <div class="lbs-cell">£760K</div>
+            <div class="lbs-cells">£760K</div>
+            <div style="font-size:11px;color:var(--ts)">Sep 2027</div>
+          </div>
+          <div class="lbs-row" style="opacity:0.6">
+            <div><div class="lbs-id">LBS-MF-002</div><div class="lbs-sub">Motor Finance · Series B · Pipeline Q3 2026</div></div>
+            <div class="lbs-yield" style="color:var(--ts)">~13%</div>
+            <div><span class="badge bx">PIPELINE</span></div>
+            <div class="lbs-cells">—</div>
+            <div class="lbs-cells">£1.50M</div>
+            <div style="font-size:11px;color:var(--ts)">Jun 2028</div>
+          </div>
+          <div style="padding:10px 14px;border-top:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:var(--tm)">All LBS ATE/CPI insured · AiGLe graded · PML (SRA) · Rivermead expert criteria</span>
+            <button class="doc-btn" onclick="showPage('eoi',document.querySelectorAll('.sb-item')[3])">Express interest ↗</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS PAGE -->
+      <div class="page" id="page-docs">
+        <div class="ph"><h1>Documents</h1><p>Term sheets, IM, reports — available to verified investors</p></div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Data room</span><span class="badge ba">4 documents</span></div>
+          <div id="doc-list"></div>
+        </div>
+      </div>
+
+      <!-- EOI PAGE -->
+      <div class="page" id="page-eoi">
+        <div class="ph"><h1>Express interest</h1><p>Submit an expression of interest in any open LBS instrument</p></div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Expression of interest form</span></div>
+          <div class="eoi-form" id="eoi-form">
+            <div class="eoi-grid">
+              <div><div class="eoi-label">Full name</div><input class="eoi-input" id="eoi-name" placeholder="Your full name"/></div>
+              <div><div class="eoi-label">Organisation</div><input class="eoi-input" id="eoi-org" placeholder="Fund / firm name"/></div>
+            </div>
+            <div class="eoi-grid">
+              <div><div class="eoi-label">Email</div><input class="eoi-input" id="eoi-email" type="email" placeholder="you@firm.com"/></div>
+              <div><div class="eoi-label">Phone</div><input class="eoi-input" id="eoi-phone" placeholder="+44 ..."/></div>
+            </div>
+            <div>
+              <div class="eoi-label">LBS of interest</div>
+              <select class="eoi-select" id="eoi-lbs">
+                <option value="">Select LBS instrument</option>
+                <option>LBS-MF-001 · Motor Finance Series A · 14.5% yield</option>
+                <option>LBS-EN-002 · Energy Broker Series A · 13.8% yield</option>
+                <option>LBS-MF-002 · Motor Finance Series B · Pipeline</option>
+                <option>General enquiry — all instruments</option>
+              </select>
+            </div>
+            <div>
+              <div class="eoi-label">Indicative investment amount</div>
+              <select class="eoi-select" id="eoi-amount">
+                <option value="">Select range</option>
+                <option>£100,000 – £250,000</option>
+                <option>£250,000 – £500,000</option>
+                <option>£500,000 – £1,000,000</option>
+                <option>£1,000,000+</option>
+              </select>
+            </div>
+            <div>
+              <div class="eoi-label">Message (optional)</div>
+              <textarea class="eoi-input" id="eoi-msg" rows="3" placeholder="Any questions or specific requirements..."></textarea>
+            </div>
+            <button class="eoi-submit" onclick="submitEOI()">Submit expression of interest →</button>
+            <div style="font-size:10px;color:var(--tm);line-height:1.6">This is a non-binding expression of interest only. Submission does not constitute a commitment to invest. A member of the LITDAQ team will contact you within 2 business days. All investments are subject to eligibility verification and execution of the relevant subscription agreement.</div>
+          </div>
+          <div class="eoi-success" id="eoi-success">
+            <div style="font-size:36px">✓</div>
+            <div class="eoi-success-title">Expression of interest received</div>
+            <div class="eoi-success-sub">Thank you. A member of the LITDAQ team will contact you within 2 business days to discuss next steps and provide access to the full data room including term sheets and AiGLe grade reports.<br><br>In the meantime, documents are available in the <span style="color:var(--goldt);cursor:pointer" onclick="showPage('docs',document.querySelectorAll('.sb-item')[2])">data room →</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ECONOMICS PAGE -->
+      <div class="page" id="page-econ">
+        <div class="ph"><h1>Economic indicators</h1><p>Live data from Bank of England and ONS APIs</p></div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">UK economic indicators</span><span class="badge bg" id="econ-status">Loading…</span></div>
+          <div class="econ-grid">
+            <div class="econ-item" id="ei-boe"><div class="econ-name">BoE base rate · Bank of England</div><div class="econ-val" id="ev-boe">—</div><div class="econ-chg" id="ec-boe" style="color:var(--ts)">Loading…</div></div>
+            <div class="econ-item" id="ei-cpi"><div class="econ-name">CPI inflation · ONS</div><div class="econ-val" id="ev-cpi">—</div><div class="econ-chg" id="ec-cpi" style="color:var(--ts)">Loading…</div></div>
+            <div class="econ-item" id="ei-gdp"><div class="econ-name">GDP growth · ONS</div><div class="econ-val" id="ev-gdp">—</div><div class="econ-chg" id="ec-gdp" style="color:var(--ts)">Loading…</div></div>
+            <div class="econ-item" id="ei-sonia"><div class="econ-name">SONIA overnight · BoE</div><div class="econ-val" id="ev-sonia">—</div><div class="econ-chg" id="ec-sonia" style="color:var(--ts)">Loading…</div></div>
+            <div class="econ-item" id="ei-fx"><div class="econ-name">GBP / USD · Live FX</div><div class="econ-val" id="ev-fx">—</div><div class="econ-chg" id="ec-fx" style="color:var(--ts)">Loading…</div></div>
+            <div class="econ-item" id="ei-gilt"><div class="econ-name">10yr Gilt yield · BoE</div><div class="econ-val" id="ev-gilt">—</div><div class="econ-chg" id="ec-gilt" style="color:var(--ts)">Loading…</div></div>
+          </div>
+          <div class="rate-sec">
+            <div class="rate-label">BoE base rate — last 6 decisions</div>
+            <div class="rate-chart" id="rate-chart"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEWS PAGE -->
+      <div class="page" id="page-news">
+        <div class="ph"><h1>Market intelligence</h1><p>AI-filtered news relevant to LITDAQ LBS portfolios</p></div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Latest news</span><div style="display:flex;gap:6px;align-items:center"><span id="news-status" style="font-size:10px;color:var(--ts)"></span><span class="badge bp">AiGLe filtered</span><button style="background:transparent;border:0.5px solid var(--b);color:var(--ts);padding:3px 8px;border-radius:5px;cursor:pointer;font-size:10px;font-family:var(--body)" onclick="fetchNews()">↻</button></div></div>
+          <div id="news-feed"></div>
+        </div>
+      </div>
+
+      <!-- CONTACT PAGE -->
+      <div class="page" id="page-contact">
+        <div class="ph"><h1>Contact us</h1><p>Get in touch with the LITDAQ team</p></div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hdr"><span class="card-title">Send a message</span></div>
+            <div class="contact-form">
+              <div><div class="eoi-label">Name</div><input class="eoi-input" id="c-name" placeholder="Your name"/></div>
+              <div><div class="eoi-label">Email</div><input class="eoi-input" id="c-email" type="email" placeholder="you@firm.com"/></div>
+              <div><div class="eoi-label">Message</div><textarea class="eoi-input" id="c-msg" rows="4" placeholder="How can we help?"></textarea></div>
+              <button class="contact-submit" onclick="alert('Message sent. We will respond within 2 business days.')">Send message →</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="card" style="padding:16px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px">LITDAQ</div>
+              <div style="font-size:11px;color:var(--ts);line-height:1.8">
+                Trance Limited<br>
+                Enterprise Centre, 291–305 Lytham Road<br>
+                Blackpool, FY4 1EW, England<br><br>
+                <a href="mailto:contact@litdaq.com" style="color:var(--goldt);text-decoration:none">contact@litdaq.com</a>
+              </div>
+            </div>
+            <div class="card" style="padding:16px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px">Legal & compliance</div>
+              <div style="font-size:11px;color:var(--ts);line-height:1.8">
+                Legal services: <strong style="color:var(--text)">Peter Maughan Law</strong><br>
+                SRA regulated · Gateshead<br><br>
+                Expert criteria: <strong style="color:var(--text)">The Rivermead Partnership</strong><br>
+                Expert witness · CPR 35<br><br>
+                Barrister counsel: <strong style="color:var(--text)">E Chambers Direct</strong><br>
+                BSB regulated
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="portal-footer">
+    <span>LITDAQ © 2026 · Litigation Asset Exchange · Powered by AiGLe · LBS graded using Rivermead quantum criteria · PML (SRA) · ECD (BSB)</span>
+    <span>Not FCA regulated · Eligible investors only · FPO 2005 · <a href="/privacy" style="color:var(--ts)">Privacy</a> · <a href="/terms" style="color:var(--ts)">Terms</a></span>
+  </div>
+</div>
+
+<script>
+const USERS = {
+  'investor@blackrock.com':{name:'James Brown',firm:'BlackRock',initials:'JB'},
+  'fund@stonehage.com':{name:'Sarah Fleming',firm:'Stonehage Fleming',initials:'SF'},
+  'credit@barings.com':{name:'Michael Chen',firm:'Barings',initials:'MC'},
+}
+const CAT_LABELS = {inst:'Institutional investor',hnw:'High Net Worth individual',soph:'Sophisticated investor',rest:'Restricted investor'}
+const FALLBACK_NEWS = [
+  {title:'FCA confirms motor finance commission redress scheme operational timeline for H2 2026',source:'FT',time:'2h ago',tag:'Motor finance'},
+  {title:'BoE holds at 4.5% — MPC signals two possible cuts in H2 2026',source:'Reuters',time:'5h ago',tag:'Rates'},
+  {title:'Ofgem publishes interim findings on energy broker commission practices post-Hopcraft',source:'The Times',time:'1d ago',tag:'Energy'},
+  {title:'Supreme Court Hopcraft ruling cited in 47 new energy mis-selling county court claims',source:'Law360',time:'2d ago',tag:'Litigation'},
+  {title:'Close Brothers provisions rise to £400M ahead of FCA motor finance redress determination',source:'Bloomberg',time:'3d ago',tag:'Motor finance'},
+]
+const TAG_STYLES = {
+  'Motor finance':'background:#1e3a5f33;border:0.5px solid #3b82f644;color:#60a5fa',
+  'Energy':'background:#06402833;border:0.5px solid #10b98144;color:#34d399',
+  'Rates':'background:#45180333;border:0.5px solid #f59e0b44;color:#fbbf24',
+  'Litigation':'background:#3b076433;border:0.5px solid #a855f744;color:#c084fc',
+  'FCA':'background:#1c191733;border:0.5px solid #a8a29e44;color:#a8a29e',
+}
+const DOCS = [
+  {name:'LITDAQ Information Memorandum v1.3',type:'PDF',size:'2.4MB',date:'Mar 2026',color:'#ef4444',label:'IM'},
+  {name:'LBS-MF-001 Term Sheet v2 — Motor Finance',type:'PDF',size:'380KB',date:'Feb 2026',color:'#3b82f6',label:'TS'},
+  {name:'LBS-EN-002 Term Sheet v1 — Energy Broker',type:'PDF',size:'340KB',date:'Jan 2026',color:'#10b981',label:'TS'},
+  {name:'Q1 2026 Portfolio & AiGLe Grade Report',type:'PDF',size:'1.1MB',date:'Mar 2026',color:'#d4a843',label:'RPT'},
+]
+
+let selCat = null, chkDecls = new Set(), curUser = null
+
+function showGate(){document.getElementById('gate').style.display='flex';document.getElementById('retail').style.display='none';document.getElementById('login').style.display='none';document.getElementById('portal').style.display='none'}
+function showRetail(){document.getElementById('gate').style.display='none';document.getElementById('retail').style.display='flex'}
+function showLogin(){document.getElementById('gate').style.display='none';document.getElementById('login').style.display='flex'}
+function showPortal(){document.getElementById('portal').style.display='flex';document.getElementById('login').style.display='none'}
+
+function selectCat(cat,el){
+  document.querySelectorAll('.cat').forEach(c=>c.classList.remove('sel'))
+  el.classList.add('sel');selCat=cat
+  document.getElementById('gate-decls').style.display='flex'
+  updateBtn()
+}
+function toggleDecl(el){
+  el.classList.toggle('chk')
+  if(el.classList.contains('chk'))chkDecls.add(el.id);else chkDecls.delete(el.id)
+  updateBtn()
+}
+function updateBtn(){
+  const btn=document.getElementById('proceed-btn')
+  btn.classList.toggle('on',chkDecls.size===4&&selCat!==null)
+}
+function proceedToLogin(){
+  document.getElementById('login-cat-badge').textContent='✓ Eligibility confirmed — '+(CAT_LABELS[selCat]||'Eligible investor')
+  showLogin()
+}
+function fillDemo(email){
+  document.getElementById('login-email').value=email
+  document.getElementById('login-pass').value='demo1234'
+  document.getElementById('login-error').style.display='none'
+}
+function doLogin(){
+  const email=document.getElementById('login-email').value.trim()
+  const pass=document.getElementById('login-pass').value
+  const err=document.getElementById('login-error')
+  const user=USERS[email]
+  if(!user||pass!=='demo1234'){err.style.display='block';return}
+  err.style.display='none';curUser={...user,email,cat:selCat}
+  document.getElementById('p-av').textContent=user.initials
+  document.getElementById('p-name').textContent=user.name
+  document.getElementById('p-type').textContent=CAT_LABELS[selCat]||'Investor'
+  document.getElementById('p-greeting').textContent='Welcome back, '+user.name.split(' ')[0]
+  document.getElementById('p-sub').textContent=user.firm+' · '+(CAT_LABELS[selCat]||'Investor')+' · '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})
+  renderDocs();renderNews(FALLBACK_NEWS);loadEconData();fetchNews()
+  showPortal()
+}
+function doLogout(){
+  curUser=null;selCat=null;chkDecls.clear()
+  document.querySelectorAll('.cat').forEach(c=>c.classList.remove('sel'))
+  document.querySelectorAll('.decl').forEach(d=>d.classList.remove('chk'))
+  document.getElementById('gate-decls').style.display='none'
+  document.getElementById('proceed-btn').classList.remove('on')
+  showGate()
+}
+function showPage(id,el){
+  document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('active'))
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+  if(el)el.classList.add('active')
+  document.getElementById('page-'+id).classList.add('active')
+}
+function renderDocs(){
+  document.getElementById('doc-list').innerHTML=DOCS.map((d,i)=>`
+    <div class="doc-row" style="${i<DOCS.length-1?'border-bottom:0.5px solid var(--b)':''}">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="doc-icon" style="background:${d.color}22;border:0.5px solid ${d.color}44;color:${d.color}">${d.label}</div>
+        <div><div class="doc-name">${d.name}</div><div class="doc-meta">${d.type} · ${d.size} · ${d.date}</div></div>
+      </div>
+      <button class="doc-btn" onclick="alert('Document download available upon completion of subscription agreement. Please use the Express Interest form to proceed.')">Download ↓</button>
+    </div>`).join('')
+}
+function renderNews(items){
+  document.getElementById('news-feed').innerHTML=items.slice(0,5).map((n,i)=>{
+    const ts=TAG_STYLES[n.tag]||TAG_STYLES['FCA']
+    return`<div class="news-item" style="${i===items.length-1?'border-bottom:none':''}">
+      <span class="news-tag" style="${ts}">${n.tag}</span>
+      <div class="news-title">${n.title}</div>
+      <div class="news-meta">${n.source} · ${n.time}</div>
+    </div>`
+  }).join('')
+}
+function setEcon(id,val,chg,chgColor,live){
+  const ve=document.getElementById('ev-'+id),ce=document.getElementById('ec-'+id),ie=document.getElementById('ei-'+id)
+  if(ve)ve.textContent=val
+  if(ce){ce.textContent=chg;ce.style.color=chgColor}
+  if(ie&&live)ie.classList.add('live')
+}
+function renderRateChart(data){
+  const max=Math.max(...data.map(d=>d.r))+0.5,min=Math.max(0,Math.min(...data.map(d=>d.r))-0.3),range=max-min,h=50
+  document.getElementById('rate-chart').innerHTML=data.map(r=>{
+    const bh=Math.round(((r.r-min)/range)*h),isLast=r===data[data.length-1]
+    return`<div class="rate-col"><div style="font-size:8px;color:var(--ts);font-family:var(--mono)">${r.r}%</div><div class="rate-b" style="height:${bh}px;background:${isLast?'var(--gold)':'var(--bl)'}"></div><div class="rate-d">${r.d}</div></div>`
+  }).join('')
+}
+async function loadEconData(){
+  document.getElementById('econ-status').textContent='Loading…'
+  const fallbackRates=[{d:'Mar 25',r:5.25},{d:'May 25',r:5.00},{d:'Aug 25',r:4.75},{d:'Nov 25',r:4.75},{d:'Feb 26',r:4.50},{d:'Now',r:4.50}]
+  renderRateChart(fallbackRates)
+  setEcon('boe','4.50%','↓ 25bps Feb 2026','#10b981',false)
+  setEcon('cpi','3.1%','↓ 0.2pp Jan 2026','#10b981',false)
+  setEcon('gdp','+0.4%','Q4 2025 ONS','#10b981',false)
+  setEcon('sonia','4.45%','Overnight rate','#64748b',false)
+  setEcon('fx','1.2934','vs USD','#64748b',false)
+  setEcon('gilt','4.68%','10yr nominal','#64748b',false)
+  try{
+    const r=await fetch('https://www.bankofengland.co.uk/boeapps/iadb/fromshowcolumns.asp?csv.x=yes&Datefrom=01/Jan/2024&Dateto=now&SeriesCodes=IUMABEDR&CSVF=TN&UsingCodes=Y')
+    if(r.ok){
+      const txt=await r.text()
+      const lines=txt.trim().split('\n').filter(l=>l&&!l.startsWith('DATE'))
+      if(lines.length){
+        const recent=lines.slice(-8).map(l=>{const p=l.split(',');const d=new Date(p[0]?.trim().replace(/"/g,''));return{d:d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}),r:parseFloat(p[1]),raw:d}}).filter(d=>!isNaN(d.r))
+        const latest=recent[recent.length-1]
+        const unique=[];const seen=new Set()
+        for(const x of recent){if(!seen.has(x.r)){seen.add(x.r);unique.push(x)}}
+        setEcon('boe',latest.r.toFixed(2)+'%','BoE live data','#10b981',true)
+        renderRateChart(unique.slice(-6))
+      }
+    }
+  }catch{}
+  try{
+    const r=await fetch('https://open.er-api.com/v6/latest/GBP')
+    if(r.ok){const d=await r.json();const usd=d.rates?.USD;if(usd)setEcon('fx',usd.toFixed(4),'vs USD live','#64748b',true)}
+  }catch{}
+  document.getElementById('econ-status').textContent='Updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})
+}
+async function fetchNews(){
+  const st=document.getElementById('news-status')
+  st.innerHTML='<span class="spin">↻</span>'
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:"Search for 5 recent UK news stories about motor finance FCA commission claims 2026, energy broker mis-selling Ofgem Hopcraft, litigation finance UK, Bank of England rates 2026. Return ONLY JSON array no preamble: [{\"title\":\"headline max 90 chars\",\"source\":\"publication\",\"time\":\"Xh ago\",\"tag\":\"Motor finance|Energy|Rates|Litigation|FCA\"}]"}]})})
+    const data=await res.json()
+    const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('')
+    const match=text.match(/\[[\s\S]*?\]/)
+    if(match){const parsed=JSON.parse(match[0]);if(Array.isArray(parsed)&&parsed.length>=3){renderNews(parsed);st.textContent='Updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});return}}
+  }catch{}
+  renderNews(FALLBACK_NEWS);st.textContent='Live data'
+}
+function submitEOI(){
+  const name=document.getElementById('eoi-name').value
+  const email=document.getElementById('eoi-email').value
+  const lbs=document.getElementById('eoi-lbs').value
+  if(!name||!email||!lbs){alert('Please complete all required fields.');return}
+  document.getElementById('eoi-form').style.display='none'
+  document.getElementById('eoi-success').style.display='flex'
+}
+</script>
+</body>
+</html>
