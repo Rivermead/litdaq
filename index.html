@@ -162,6 +162,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
 .fade-in{animation:fadeIn 0.4s ease forwards}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{animation:spin 1s linear infinite;display:inline-block}
+
+#brochure-modal{display:none;position:fixed;inset:0;background:#07090fcc;z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.brochure-card{background:var(--card);border:0.5px solid var(--b);border-radius:16px;width:100%;max-width:440px;padding:28px 28px 24px;position:relative}
+.brochure-close{position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--ts);font-size:18px;cursor:pointer;font-family:var(--body)}
 </style>
 </head>
 <body>
@@ -253,6 +257,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
     <div class="topbar-right">
       <div class="live-badge"><div class="live-dot"></div>Live</div>
       <button class="investor-btn" onclick="showPage('eoi',null)">Express interest ↗</button>
+      <button class="investor-btn" style="background:transparent;border:0.5px solid #d4a84344;color:var(--goldt)" onclick="showBrochureForm()">⬇ Brochure</button>
     </div>
   </div>
 
@@ -657,6 +662,63 @@ function submitEOI(){
   document.getElementById('eoi-form').style.display='none'
   document.getElementById('eoi-success').style.display='flex'
 }
+
+function showBrochureForm(){
+  document.getElementById('brochure-modal').style.display='flex'
+  document.getElementById('brochure-form-wrap').style.display='block'
+  document.getElementById('brochure-success').style.display='none'
+}
+function closeBrochureForm(){
+  document.getElementById('brochure-modal').style.display='none'
+}
+function submitBrochureForm(){
+  const name=document.getElementById('br-name').value.trim()
+  const org=document.getElementById('br-org').value.trim()
+  const email=document.getElementById('br-email').value.trim()
+  if(!name||!email){alert('Please enter your name and email address.');return}
+  if(!email.includes('@')){alert('Please enter a valid email address.');return}
+  fetch('https://api.brevo.com/v3/contacts',{
+    method:'POST',
+    headers:{'api-key':'BREVO_KEY_HERE','Content-Type':'application/json'},
+    body:JSON.stringify({email:email,attributes:{FIRSTNAME:name.split(' ')[0],LASTNAME:name.split(' ').slice(1).join(' '),COMPANY:org},listIds:[3],updateEnabled:true})
+  }).catch(()=>{})
+  document.getElementById('brochure-form-wrap').style.display='none'
+  document.getElementById('brochure-success').style.display='block'
+  setTimeout(()=>{
+    const a=document.createElement('a')
+    a.href='/LITDAQ_Investor_Brochure_2026.pdf'
+    a.download='LITDAQ_Investor_Brochure_2026.pdf'
+    a.click()
+  },500)
+}
+
 </script>
+
+<div id="brochure-modal" onclick="if(event.target===this)closeBrochureForm()">
+  <div class="brochure-card fade-in">
+    <button class="brochure-close" onclick="closeBrochureForm()">&#x2715;</button>
+    <div id="brochure-form-wrap">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div style="width:36px;height:36px;border-radius:8px;background:var(--goldd);border:0.5px solid #d4a84355;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--goldt)">⬇</div>
+        <div style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--text)">Download Investor Brochure</div>
+      </div>
+      <div style="font-size:12px;color:var(--ts);line-height:1.6;margin-bottom:20px">Please provide your details to download the LITDAQ LBS Investor Brochure. Your information is kept confidential and used only for investor relations purposes.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><div class="eoi-label">Full name</div><input class="eoi-input" id="br-name" placeholder="Your full name"/></div>
+        <div><div class="eoi-label">Organisation</div><input class="eoi-input" id="br-org" placeholder="Fund / firm name"/></div>
+        <div><div class="eoi-label">Email address</div><input class="eoi-input" id="br-email" type="email" placeholder="you@firm.com"/></div>
+      </div>
+      <button class="eoi-submit" style="width:100%;margin-top:14px" onclick="submitBrochureForm()">Download brochure →</button>
+      <div style="font-size:10px;color:var(--tm);text-align:center;margin-top:10px;line-height:1.6">For FPO 2005 eligible investors only. By downloading you confirm eligibility.</div>
+    </div>
+    <div id="brochure-success" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:36px;margin-bottom:10px">✓</div>
+      <div style="font-size:16px;font-weight:700;color:var(--green);margin-bottom:8px">Your download is starting</div>
+      <div style="font-size:12px;color:var(--ts);line-height:1.6">Thank you. The brochure is downloading now.<br><br>For any questions contact <span style="color:var(--goldt)">ir@litdaq.com</span></div>
+      <button class="eoi-submit" style="margin-top:16px" onclick="closeBrochureForm()">Close</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
