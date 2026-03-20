@@ -45,7 +45,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
 .confirm-check{display:flex;align-items:flex-start;gap:14px;cursor:pointer;padding:14px 16px;border:0.5px solid var(--b);border-radius:10px;transition:all 0.15s}
 .confirm-check:hover{border-color:#d4a84344;background:#d4a84306}
 .confirm-check.checked{border-color:var(--gold);background:#d4a84309}
-.check-box{width:22px;height:22px;border-radius:6px;border:2px solid var(--b);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:13px;font-weight:700;color:#07090f}
+.check-box{width:22px;height:22px;border-radius:6px;border:2px solid #d4a84366;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:13px;font-weight:700;color:#07090f}
 .confirm-check.checked .check-box{border-color:var(--gold);background:var(--gold)}
 .check-text{font-size:13px;color:var(--ts);line-height:1.6}
 .check-text strong{color:var(--text)}
@@ -201,7 +201,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
         <div class="warn-text"><strong>Restricted financial promotion.</strong> This communication relates to unregulated investments under FSMA 2000. It may only be accessed by persons permitted to receive it under the Financial Promotion Order 2005. These investments are not FCA-regulated and capital is at risk.</div>
       </div>
 
-      <div class="gate-confirm">
+      <div class="gate-confirm"><div style="text-align:center;margin-bottom:8px"><div style="display:inline-flex;align-items:center;gap:8px;background:#d4a84315;border:1px solid #d4a84355;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;color:#d4a843;letter-spacing:0.05em">↓ TICK THE BOX BELOW TO CONTINUE ↓</div></div>
         <div class="confirm-check" id="confirm-box" onclick="toggleConfirm()">
           <div class="check-box" id="check-icon"></div>
           <div class="check-text">I confirm I am an <strong>institutional investor, certified high net worth individual, sophisticated investor, or certified restricted investor</strong> under FPO 2005, and I am not a retail client. I understand these investments are unregulated and capital is at risk.</div>
