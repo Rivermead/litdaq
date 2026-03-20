@@ -244,6 +244,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
     </div>
     <div class="portal-nav">
       <button class="nav-btn active" onclick="showPage('overview',this)">Overview</button>
+      <button class="nav-btn" onclick="showPage('about',this)">About LBS</button>
       <button class="nav-btn" onclick="showPage('lbs',this)">LBS listings</button>
       <button class="nav-btn" onclick="showPage('economics',this)">Economics</button>
       <button class="nav-btn" onclick="showPage('news',this)">News</button>
@@ -316,6 +317,51 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
       </div>
     </div>
 
+    <!-- ABOUT LBS PAGE -->
+    <div id="page-about" style="display:none;flex-direction:column;gap:12px">
+      <div class="two-col">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="card" style="padding:20px">
+            <div style="font-size:10px;font-weight:600;color:var(--ts);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px">What is a Litigation-Backed Security?</div>
+            <div style="font-size:13px;color:var(--ts);line-height:1.85">A <strong style="color:var(--text)">Litigation-Backed Security (LBS)</strong> is a debt instrument backed by a portfolio of consumer finance claims. Investors provide capital which funds the conduct of litigation. Returns are generated when claims settle or succeed at trial, entirely independent of equity markets, credit spreads, or interest rate movements.<br><br>Each LBS has a defined term of 18-36 months, a fixed target yield of 12-16%, and capital protection via ATE and CPI insurance. Returns are determined by court decisions and regulatory redress schemes, not macroeconomic conditions.</div>
+          </div>
+          <div class="card" style="padding:20px">
+            <div style="font-size:10px;font-weight:600;color:var(--ts);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px">Claim types</div>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--ts);line-height:1.7">
+              <div style="padding:12px;background:var(--bg);border:0.5px solid #3b82f633;border-radius:8px"><strong style="color:#60a5fa">Motor Finance Commission</strong><br>Undisclosed commissions paid by lenders to motor dealers. Following Hopcraft v Close Brothers [2025] UKSC 33 the Supreme Court confirmed lender liability. FCA redress scheme operational H2 2026.</div>
+              <div style="padding:12px;background:var(--bg);border:0.5px solid #10b98133;border-radius:8px"><strong style="color:#34d399">Energy Broker Commission</strong><br>Undisclosed commissions paid by energy suppliers to commercial brokers. Confirmed in Expert Tooling v Engie [2025] UKSC consent order. Ofgem interim findings published.</div>
+              <div style="padding:12px;background:var(--bg);border:0.5px solid #d4a84333;border-radius:8px"><strong style="color:var(--goldt)">Irresponsible Lending</strong><br>Claims against lenders who advanced credit without adequate affordability assessment under FCA CONC rules and CCA 1974 unfair relationship provisions.</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="card" style="padding:20px">
+            <div style="font-size:10px;font-weight:600;color:var(--ts);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px">AiGLe grading</div>
+            <div style="font-size:13px;color:var(--ts);line-height:1.8;margin-bottom:14px">Every LBS is graded by <strong style="color:var(--goldt)">AiGLe</strong> before listing using three independent inputs:</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--ts)">
+              <div style="padding:10px 12px;background:var(--bg);border:0.5px solid var(--b);border-radius:7px"><strong style="color:var(--text)">1. Court precedents</strong> - PML litigation precedent database updated with every new judgment</div>
+              <div style="padding:10px 12px;background:var(--bg);border:0.5px solid var(--b);border-radius:7px"><strong style="color:var(--text)">2. Barrister opinions</strong> - E Chambers Direct (BSB) counsel assessment of merits and quantum</div>
+              <div style="padding:10px 12px;background:var(--bg);border:0.5px solid var(--b);border-radius:7px"><strong style="color:var(--text)">3. Quantum criteria</strong> - The Rivermead Partnership expert witness methodology</div>
+            </div>
+            <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;font-size:11px">
+              <div style="padding:8px;background:var(--bg);border:0.5px solid #10b98133;border-radius:6px"><div style="color:#34d399;font-weight:700;font-family:var(--mono);font-size:14px">A+/A</div><div style="color:var(--ts);margin-top:2px">Strong merits</div></div>
+              <div style="padding:8px;background:var(--bg);border:0.5px solid #3b82f633;border-radius:6px"><div style="color:#60a5fa;font-weight:700;font-family:var(--mono);font-size:14px">A-/B+</div><div style="color:var(--ts);margin-top:2px">Good merits</div></div>
+              <div style="padding:8px;background:var(--bg);border:0.5px solid #d4a84333;border-radius:6px"><div style="color:var(--goldt);font-weight:700;font-family:var(--mono);font-size:14px">B</div><div style="color:var(--ts);margin-top:2px">Min. listing</div></div>
+            </div>
+          </div>
+          <div class="card" style="padding:20px">
+            <div style="font-size:10px;font-weight:600;color:var(--ts);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px">How it works</div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ts)">
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid var(--b)"><div style="width:22px;height:22px;border-radius:50%;background:var(--goldd);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--goldt);flex-shrink:0">1</div><div><strong style="color:var(--text)">Portfolio assembly</strong> - PML assembles consumer finance claims, assessed for merits and quantum</div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid var(--b)"><div style="width:22px;height:22px;border-radius:50%;background:var(--goldd);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--goldt);flex-shrink:0">2</div><div><strong style="color:var(--text)">AiGLe grading</strong> - portfolio graded using precedents, barrister opinions and quantum criteria</div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid var(--b)"><div style="width:22px;height:22px;border-radius:50%;background:var(--goldd);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--goldt);flex-shrink:0">3</div><div><strong style="color:var(--text)">Insurance</strong> - ATE and CPI insurance obtained protecting costs and investor capital</div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid var(--b)"><div style="width:22px;height:22px;border-radius:50%;background:var(--goldd);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--goldt);flex-shrink:0">4</div><div><strong style="color:var(--text)">LITDAQ listing</strong> - LBS listed and offered to eligible investors via EOI</div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0"><div style="width:22px;height:22px;border-radius:50%;background:var(--goldd);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--goldt);flex-shrink:0">5</div><div><strong style="color:var(--text)">Resolution</strong> - claims settle or succeed. Capital and target yield returned on maturity</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- LBS PAGE -->
     <div id="page-lbs" style="display:none;flex-direction:column;gap:12px">
       <div class="card">
@@ -528,7 +574,7 @@ function showRetail(){
 function showPage(id,el){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'))
   if(el)el.classList.add('active')
-  const pages=['overview','lbs','economics','news','eoi','contact']
+  const pages=['overview','about','lbs','economics','news','eoi','contact']
   pages.forEach(p=>{ const el=document.getElementById('page-'+p); if(el)el.style.display='none' })
   const target=document.getElementById('page-'+id)
   if(target)target.style.display='flex'
