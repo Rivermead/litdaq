@@ -750,6 +750,18 @@ function submitEOI(){
   const email=document.getElementById('eoi-email').value
   const lbs=document.getElementById('eoi-lbs').value
   if(!name||!email||!lbs){alert('Please complete name, email and select an instrument.');return}
+  // Post to LITDAQ CRM
+  fetch('https://crm.litdaq.com/api/lead', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name: name, email: email, organisation: '', lead_type: 'eoi', source: 'litdaq.com', notes: 'Instrument: '+lbs})
+  }).catch(()=>{})
+  // Post to Brevo
+  fetch('https://api.brevo.com/v3/contacts',{
+    method:'POST',
+    headers:{'api-key':'BREVO_KEY_HERE','Content-Type':'application/json'},
+    body:JSON.stringify({email:email,attributes:{FIRSTNAME:name.split(' ')[0],LASTNAME:name.split(' ').slice(1).join(' ')},listIds:[3],updateEnabled:true})
+  }).catch(()=>{})
   document.getElementById('eoi-form').style.display='none'
   document.getElementById('eoi-success').style.display='flex'
 }
@@ -768,6 +780,12 @@ function submitBrochureForm(){
   const email=document.getElementById('br-email').value.trim()
   if(!name||!email){alert('Please enter your name and email address.');return}
   if(!email.includes('@')){alert('Please enter a valid email address.');return}
+  // Post to LITDAQ CRM
+  fetch('https://crm.litdaq.com/api/lead', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name: name, email: email, organisation: org, lead_type: 'brochure', source: 'litdaq.com'})
+  }).catch(()=>{})
   fetch('https://api.brevo.com/v3/contacts',{
     method:'POST',
     headers:{'api-key':'BREVO_KEY_HERE','Content-Type':'application/json'},
