@@ -455,27 +455,32 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
     <!-- LBS PAGE -->
     <div id="page-lbs" style="display:none;flex-direction:column;gap:12px">
       <div class="card">
-        <div class="card-hdr"><span class="card-title">All LBS instruments</span><span class="badge bg">3 active</span></div>
+        <div class="card-hdr"><span class="card-title">All LBS instruments</span><span class="badge bg">2 open · 3 pipeline</span></div>
         <div class="lbs-hrow"><span class="lbs-hcell">LBS / Type</span><span class="lbs-hcell">Yield</span><span class="lbs-hcell">Grade</span><span class="lbs-hcell">Raised</span><span class="lbs-hcell">Target</span><span class="lbs-hcell">Maturity</span></div>
         <div class="lbs-row" onclick="showPage('eoi',null)">
-          <div><div class="lbs-id">LBS-MF-001</div><div class="lbs-sub">Motor Finance · Series A · ATE+CPI insured</div><div class="prog-wrap"><div class="prog-bar" style="width:71%;background:#3b82f6"></div></div></div>
+          <div><div class="lbs-id">LBS-MF-001</div><div class="lbs-sub">Motor Finance · Series A · ATE+CPI insured</div><div class="prog-wrap"><div class="prog-bar" style="width:2%;background:#3b82f6"></div></div></div>
           <div class="lbs-yield">14.5%</div><div><span class="badge bg">A–</span></div>
-          <div class="lbs-cell">£850K</div><div class="lbs-cells">£1.20M</div><div style="font-size:12px;color:var(--ts)">Dec 2027</div>
+          <div class="lbs-cell" style="color:var(--goldt)">Pending</div><div class="lbs-cells">£20.0M</div><div style="font-size:12px;color:var(--ts)">Dec 2027</div>
         </div>
         <div class="lbs-row" onclick="showPage('eoi',null)">
-          <div><div class="lbs-id">LBS-EN-002</div><div class="lbs-sub">Energy Broker · Series A · ATE+CPI insured</div><div class="prog-wrap"><div class="prog-bar" style="width:62%;background:#10b981"></div></div></div>
+          <div><div class="lbs-id">LBS-EN-002</div><div class="lbs-sub">Energy Broker · Series A · ATE+CPI insured</div><div class="prog-wrap"><div class="prog-bar" style="width:2%;background:#10b981"></div></div></div>
           <div class="lbs-yield">13.8%</div><div><span class="badge bg">A</span></div>
-          <div class="lbs-cell">£620K</div><div class="lbs-cells">£1.00M</div><div style="font-size:12px;color:var(--ts)">Mar 2028</div>
+          <div class="lbs-cell" style="color:var(--goldt)">Pending</div><div class="lbs-cells">£50.0M</div><div style="font-size:12px;color:var(--ts)">Mar 2028</div>
         </div>
         <div class="lbs-row" style="opacity:0.5">
-          <div><div class="lbs-id">LBS-RC-001</div><div class="lbs-sub">Irr. Lending · Series A · Closed</div></div>
-          <div class="lbs-yield" style="color:var(--ts)">15.1%</div><div><span class="badge bx">CLOSED</span></div>
-          <div class="lbs-cell">£760K</div><div class="lbs-cells">£760K</div><div style="font-size:12px;color:var(--ts)">Sep 2027</div>
+          <div><div class="lbs-id">LBS-RC-001</div><div class="lbs-sub">Irresponsible Lending · Series A · Pipeline Q3 2026</div></div>
+          <div class="lbs-yield" style="color:var(--ts)">~15%</div><div><span class="badge ba">PIPELINE</span></div>
+          <div class="lbs-cells">—</div><div class="lbs-cells">£5.0M</div><div style="font-size:12px;color:var(--ts)">2027</div>
         </div>
         <div class="lbs-row" style="opacity:0.5">
-          <div><div class="lbs-id">LBS-MF-002</div><div class="lbs-sub">Motor Finance · Series B · Pipeline Q3 2026</div></div>
+          <div><div class="lbs-id">LBS-MF-002</div><div class="lbs-sub">Motor Finance · Series B · Pipeline Q4 2026</div></div>
+          <div class="lbs-yield" style="color:var(--ts)">~14%</div><div><span class="badge ba">PIPELINE</span></div>
+          <div class="lbs-cells">—</div><div class="lbs-cells">£20.0M</div><div style="font-size:12px;color:var(--ts)">2028</div>
+        </div>
+        <div class="lbs-row" style="opacity:0.5">
+          <div><div class="lbs-id">LBS-PPI-001</div><div class="lbs-sub">PPI / Plevin · Series A · Pipeline Q4 2026</div></div>
           <div class="lbs-yield" style="color:var(--ts)">~13%</div><div><span class="badge ba">PIPELINE</span></div>
-          <div class="lbs-cells">—</div><div class="lbs-cells">£1.50M</div><div style="font-size:12px;color:var(--ts)">Jun 2028</div>
+          <div class="lbs-cells">—</div><div class="lbs-cells">£12.0M</div><div style="font-size:12px;color:var(--ts)">2028</div>
         </div>
         <div style="padding:12px 16px;border-top:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:10px;color:var(--tm)">All LBS AiGLe graded · ATE/CPI insured · PML (SRA) · Rivermead expert criteria</span>
