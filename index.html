@@ -766,13 +766,32 @@ function submitEOI(){
   document.getElementById('eoi-success').style.display='flex'
 }
 
+let selectedBrochure=null
+const BROCHURE_MAP={
+  capital:{title:'Capital Markets (Non-Basel III)',file:'LITDAQ_Capital_Markets_Brochure_2026.pdf'},
+  reserve:{title:'Reserve Markets (Basel III)',file:'LITDAQ_Reserve_Markets_Brochure_2026.pdf'}
+}
+
 function showBrochureForm(){
+  selectedBrochure=null
   document.getElementById('brochure-modal').style.display='flex'
-  document.getElementById('brochure-form-wrap').style.display='block'
+  document.getElementById('brochure-select').style.display='block'
+  document.getElementById('brochure-form-wrap').style.display='none'
   document.getElementById('brochure-success').style.display='none'
 }
 function closeBrochureForm(){
   document.getElementById('brochure-modal').style.display='none'
+}
+function selectBrochure(type){
+  selectedBrochure=type
+  document.getElementById('brochure-type-title').textContent=BROCHURE_MAP[type].title+' Brochure'
+  document.getElementById('brochure-select').style.display='none'
+  document.getElementById('brochure-form-wrap').style.display='block'
+}
+function backToBrochureSelect(){
+  selectedBrochure=null
+  document.getElementById('brochure-form-wrap').style.display='none'
+  document.getElementById('brochure-select').style.display='block'
 }
 function submitBrochureForm(){
   const name=document.getElementById('br-name').value.trim()
@@ -780,11 +799,12 @@ function submitBrochureForm(){
   const email=document.getElementById('br-email').value.trim()
   if(!name||!email){alert('Please enter your name and email address.');return}
   if(!email.includes('@')){alert('Please enter a valid email address.');return}
+  const brochureType=BROCHURE_MAP[selectedBrochure]?.title||'Unknown'
   // Post to LITDAQ CRM
   fetch('https://crm.litdaq.com/api/lead', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({name: name, email: email, organisation: org, lead_type: 'brochure', source: 'litdaq.com'})
+    body: JSON.stringify({name: name, email: email, organisation: org, lead_type: 'brochure', source: 'litdaq.com', notes: 'Brochure: '+brochureType})
   }).catch(()=>{})
   fetch('https://api.brevo.com/v3/contacts',{
     method:'POST',
@@ -793,10 +813,11 @@ function submitBrochureForm(){
   }).catch(()=>{})
   document.getElementById('brochure-form-wrap').style.display='none'
   document.getElementById('brochure-success').style.display='block'
+  const file=BROCHURE_MAP[selectedBrochure]?.file
   setTimeout(()=>{
     const a=document.createElement('a')
-    a.href='/LITDAQ_Investor_Brochure_2026.pdf'
-    a.download='LITDAQ_Investor_Brochure_2026.pdf'
+    a.href='/'+file
+    a.download=file
     a.click()
   },500)
 }
@@ -804,22 +825,44 @@ function submitBrochureForm(){
 </script>
 
 <div id="brochure-modal" onclick="if(event.target===this)closeBrochureForm()">
-  <div class="brochure-card fade-in">
+  <div class="brochure-card fade-in" style="max-width:520px">
     <button class="brochure-close" onclick="closeBrochureForm()">&#x2715;</button>
-    <div id="brochure-form-wrap">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+
+    <!-- Step 1: Select brochure type -->
+    <div id="brochure-select">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <div style="width:36px;height:36px;border-radius:8px;background:var(--goldd);border:0.5px solid #d4a84355;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--goldt)">⬇</div>
-        <div style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--text)">Download Investor Brochure</div>
+        <div style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--text)">Download Brochure</div>
       </div>
-      <div style="font-size:12px;color:var(--ts);line-height:1.6;margin-bottom:20px">Please provide your details to download the LITDAQ LBS Investor Brochure. Your information is kept confidential and used only for investor relations purposes.</div>
+      <div style="font-size:12px;color:var(--ts);line-height:1.6;margin-bottom:18px">Select the brochure relevant to your investor category.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button onclick="selectBrochure('capital')" style="background:var(--bg);border:0.5px solid var(--b);border-radius:12px;padding:18px 16px;cursor:pointer;text-align:left;transition:all 0.15s" onmouseover="this.style.borderColor='var(--gold)';this.style.background='#d4a84308'" onmouseout="this.style.borderColor='var(--b)';this.style.background='var(--bg)'">
+          <div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--goldt);margin-bottom:4px">Capital Markets <span style="font-family:var(--mono);font-size:10px;color:var(--ts);font-weight:400;margin-left:6px">Non-Basel III</span></div>
+          <div style="font-size:11px;color:var(--ts);line-height:1.5">HNW Individuals · Institutional Investors · Family Offices · Funds</div>
+        </button>
+        <button onclick="selectBrochure('reserve')" style="background:var(--bg);border:0.5px solid var(--b);border-radius:12px;padding:18px 16px;cursor:pointer;text-align:left;transition:all 0.15s" onmouseover="this.style.borderColor='var(--gold)';this.style.background='#d4a84308'" onmouseout="this.style.borderColor='var(--b)';this.style.background='var(--bg)'">
+          <div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--goldt);margin-bottom:4px">Reserve Markets <span style="font-family:var(--mono);font-size:10px;color:var(--ts);font-weight:400;margin-left:6px">Basel III</span></div>
+          <div style="font-size:11px;color:var(--ts);line-height:1.5">Tier 1 &amp; Tier 2 Banks</div>
+        </button>
+      </div>
+      <div style="font-size:10px;color:var(--tm);text-align:center;margin-top:14px;line-height:1.6">For FPO 2005 eligible investors only.</div>
+    </div>
+
+    <!-- Step 2: Lead capture form -->
+    <div id="brochure-form-wrap" style="display:none">
+      <button onclick="backToBrochureSelect()" style="background:none;border:none;color:var(--ts);font-size:12px;cursor:pointer;font-family:var(--body);margin-bottom:14px;padding:0">← Back</button>
+      <div style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px" id="brochure-type-title"></div>
+      <div style="font-size:12px;color:var(--ts);line-height:1.6;margin-bottom:18px">Please provide your details to download. Your information is kept confidential and used only for investor relations purposes.</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <div><div class="eoi-label">Full name</div><input class="eoi-input" id="br-name" placeholder="Your full name"/></div>
-        <div><div class="eoi-label">Organisation</div><input class="eoi-input" id="br-org" placeholder="Fund / firm name"/></div>
+        <div><div class="eoi-label">Organisation</div><input class="eoi-input" id="br-org" placeholder="Fund / firm / bank name"/></div>
         <div><div class="eoi-label">Email address</div><input class="eoi-input" id="br-email" type="email" placeholder="you@firm.com"/></div>
       </div>
       <button class="eoi-submit" style="width:100%;margin-top:14px" onclick="submitBrochureForm()">Download brochure →</button>
       <div style="font-size:10px;color:var(--tm);text-align:center;margin-top:10px;line-height:1.6">For FPO 2005 eligible investors only. By downloading you confirm eligibility.</div>
     </div>
+
+    <!-- Step 3: Success -->
     <div id="brochure-success" style="display:none;text-align:center;padding:20px 0">
       <div style="font-size:36px;margin-bottom:10px">✓</div>
       <div style="font-size:16px;font-weight:700;color:var(--green);margin-bottom:8px">Your download is starting</div>
