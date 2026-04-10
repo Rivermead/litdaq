@@ -696,6 +696,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
 </div>
 
 <script>
+// ── EARLY HASH CHECK: hide gate immediately if #book link ──
+(function(){
+  var h=window.location.hash;
+  if(h==='#book'||h.indexOf('#book/')===0){
+    document.getElementById('gate').style.display='none';
+    document.getElementById('portal').style.display='flex';
+  }
+})();
+
 const FALLBACK_NEWS=[
   {title:'FCA confirms motor finance commission redress scheme operational timeline for H2 2026',source:'FT',time:'2h ago',tag:'Motor finance'},
   {title:'BoE holds at 4.5% — MPC signals two possible cuts in H2 2026',source:'Reuters',time:'5h ago',tag:'Rates'},
