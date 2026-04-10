@@ -626,13 +626,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
         <div class="card">
           <div class="card-hdr"><span class="card-title">Book a call with the Trade Desk</span></div>
           <div id="booking-content">
-            <div class="eoi-form">
-              <div><div class="eoi-label">Your Name *</div><input class="eoi-input" id="bkp-name" placeholder="Full name"/></div>
-              <div><div class="eoi-label">Email *</div><input class="eoi-input" id="bkp-email" type="email" placeholder="you@firm.com"/></div>
-              <div><div class="eoi-label">Organisation</div><input class="eoi-input" id="bkp-org" placeholder="Company name"/></div>
-              <button class="eoi-submit" id="bkp-next" onclick="bookingLoadSlots()">View available times →</button>
-              <div id="bkp-error" style="color:var(--red);font-size:12px;margin-top:6px;display:none"></div>
-            </div>
+            <div style="padding:20px;text-align:center;color:var(--ts)">Loading available times...</div>
           </div>
         </div>
         <div class="card" style="padding:20px">
@@ -702,6 +696,7 @@ function showPage(id,el){
   pages.forEach(p=>{ const el=document.getElementById('page-'+p); if(el)el.style.display='none' })
   const target=document.getElementById('page-'+id)
   if(target)target.style.display='flex'
+  if(id==='booking' && !_bkToken) bkAutoLoad();
 }
 
 function renderNews(items){
@@ -850,146 +845,189 @@ function submitBrochureForm(){
   },500)
 }
 
-// ── BOOKING ──
+// ── BOOKING (Calendly-style: calendar first, details on confirm) ──
 var _bkToken = null;
 var _bkSelectedDate = null, _bkSelectedTime = null;
+var _bkSlots = []; // all fetched slots
+var _bkGroups = {}; // grouped by date
 
-function bookingLoadSlots(){
-  var name = document.getElementById('bkp-name').value.trim();
-  var email = document.getElementById('bkp-email').value.trim();
-  var org = document.getElementById('bkp-org').value.trim();
-  var errEl = document.getElementById('bkp-error');
-  if(!name||!email){errEl.textContent='Please enter your name and email.';errEl.style.display='block';return}
-  if(!email.includes('@')){errEl.textContent='Please enter a valid email address.';errEl.style.display='block';return}
-  errEl.style.display='none';
-  document.getElementById('bkp-next').textContent='Loading...';
-  document.getElementById('bkp-next').disabled=true;
-
-  // Create booking in CRM + fetch slots in parallel
-  Promise.all([
-    fetch('https://crm.litdaq.com/api/book/public',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name:name,email:email,organisation:org})
-    }).then(r=>r.json()),
-    fetch('https://crm.litdaq.com/api/book/slots').then(r=>r.json())
-  ]).then(function(results){
-    var booking = results[0];
-    var slots = results[1];
-    if(!booking.success){
-      errEl.textContent=booking.error||'Something went wrong';errEl.style.display='block';
-      document.getElementById('bkp-next').textContent='View available times →';document.getElementById('bkp-next').disabled=false;
-      return;
-    }
-    _bkToken = booking.token;
-    renderBookingSlots(slots, name);
-  }).catch(function(e){
-    errEl.textContent='Network error. Please try again.';errEl.style.display='block';
-    document.getElementById('bkp-next').textContent='View available times →';document.getElementById('bkp-next').disabled=false;
-  });
+function bkAutoLoad(){
+  var el = document.getElementById('booking-content');
+  el.innerHTML='<div style="padding:40px;text-align:center;color:var(--ts)">Loading available times...</div>';
+  fetch('https://crm.litdaq.com/api/book/slots')
+    .then(function(r){ return r.json(); })
+    .then(function(slots){
+      _bkSlots = slots;
+      bkRenderCalendar(slots);
+    })
+    .catch(function(){
+      el.innerHTML='<div style="padding:20px;text-align:center;color:var(--red)">Could not load availability. Please try again later.</div>';
+    });
 }
 
-function renderBookingSlots(slots, name){
+function bkRenderCalendar(slots){
   var el = document.getElementById('booking-content');
+  _bkSelectedDate = null; _bkSelectedTime = null;
   if(!slots.length){
-    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--ts);font-size:13px">No available time slots at the moment. Please email <a href="mailto:tradedesk@litdaq.com" style="color:var(--goldt)">tradedesk@litdaq.com</a></div>';
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--ts);font-size:13px">No available time slots at the moment.<br>Please email <a href="mailto:tradedesk@litdaq.com" style="color:var(--goldt)">tradedesk@litdaq.com</a></div>';
     return;
   }
-  var groups={};
+  // Group by date
+  _bkGroups={};
   slots.forEach(function(s){
-    if(!groups[s.date])groups[s.date]={day:s.day,date:s.date,times:[]};
-    groups[s.date].times.push(s.time);
+    if(!_bkGroups[s.date])_bkGroups[s.date]={day:s.day,date:s.date,times:[]};
+    _bkGroups[s.date].times.push(s.time);
   });
-  var html='<div style="padding:16px 20px;font-size:13px;color:var(--ts);margin-bottom:4px">Hi '+name.split(' ')[0]+', pick a time:</div>';
-  html+='<div style="padding:0 20px 20px;max-height:400px;overflow-y:auto">';
-  Object.keys(groups).forEach(function(dk){
-    var g=groups[dk];
+  var dates = Object.keys(_bkGroups);
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  var html='<div style="padding:16px 20px 8px;font-size:13px;color:var(--ts)">Select a date</div>';
+  // Date pills — scrollable row
+  html+='<div style="padding:0 20px 16px;display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch">';
+  dates.forEach(function(dk){
     var d=new Date(dk+'T00:00:00');
-    var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    html+='<div style="margin-bottom:14px">';
-    html+='<div style="font-size:11px;font-weight:700;color:var(--goldt);margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid var(--b)">'+g.day+' '+d.getDate()+' '+months[d.getMonth()]+'</div>';
-    html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
-    g.times.forEach(function(t){
-      html+='<div onclick="pickBkSlot(this,\''+dk+'\',\''+t+'\')" style="background:var(--bg);border:0.5px solid var(--b);border-radius:6px;padding:7px 12px;cursor:pointer;font-size:12px;font-weight:600;font-family:var(--mono);transition:all .15s" onmouseover="this.style.borderColor=\'var(--gold)\'" onmouseout="if(!this.classList.contains(\'bk-sel\'))this.style.borderColor=\'var(--b)\'">'+t+'</div>';
-    });
-    html+='</div></div>';
+    html+='<div onclick="bkPickDate(\''+dk+'\')" id="bkd-'+dk+'" style="min-width:64px;text-align:center;background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .15s;flex-shrink:0" onmouseover="if(!this.classList.contains(\'bk-dsel\'))this.style.borderColor=\'var(--gold)\'" onmouseout="if(!this.classList.contains(\'bk-dsel\'))this.style.borderColor=\'var(--b)\'">';
+    html+='<div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px">'+days[d.getDay()]+'</div>';
+    html+='<div style="font-size:20px;font-weight:700;margin:2px 0">'+d.getDate()+'</div>';
+    html+='<div style="font-size:10px;color:var(--ts)">'+months[d.getMonth()]+'</div>';
+    html+='</div>';
   });
   html+='</div>';
-  html+='<div style="padding:0 20px 4px"><textarea id="bkp-notes" placeholder="Any notes for the call (optional)..." style="width:100%;background:var(--bg);border:0.5px solid var(--b);border-radius:6px;padding:10px;color:var(--text);font-family:var(--body);font-size:12px;resize:vertical;min-height:50px;box-sizing:border-box"></textarea></div>';
-  html+='<div style="padding:0 20px 20px"><button class="eoi-submit" id="bkp-confirm" style="width:100%;opacity:.4;cursor:not-allowed" disabled onclick="confirmBooking()">Select a time slot</button>';
-  html+='<div id="bkp-confirm-err" style="color:var(--red);font-size:12px;margin-top:6px;display:none"></div></div>';
+  // Time slots area (empty until date picked)
+  html+='<div id="bk-times" style="padding:0 20px"></div>';
+  // Details form (hidden until time picked)
+  html+='<div id="bk-details" style="display:none;padding:0 20px 20px"></div>';
   el.innerHTML=html;
 }
 
-function pickBkSlot(el,date,time){
-  document.querySelectorAll('.bk-sel').forEach(function(s){s.classList.remove('bk-sel');s.style.borderColor='var(--b)';s.style.background='var(--bg)';s.style.color='var(--text)'});
-  el.classList.add('bk-sel');
-  el.style.borderColor='var(--gold)';el.style.background='var(--gold)';el.style.color='#07090f';
-  _bkSelectedDate=date;_bkSelectedTime=time;
-  var btn=document.getElementById('bkp-confirm');
-  btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';
-  var d=new Date(date+'T00:00:00');
-  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function bkPickDate(dateKey){
+  _bkSelectedDate=dateKey; _bkSelectedTime=null;
+  // Highlight selected date
+  document.querySelectorAll('[id^="bkd-"]').forEach(function(el){
+    el.classList.remove('bk-dsel');
+    el.style.borderColor='var(--b)';el.style.background='var(--bg)';el.style.color='var(--text)';
+  });
+  var sel=document.getElementById('bkd-'+dateKey);
+  if(sel){sel.classList.add('bk-dsel');sel.style.borderColor='var(--gold)';sel.style.background='var(--gold)';sel.style.color='#07090f';}
+  // Hide details form
+  document.getElementById('bk-details').style.display='none';
+  // Render time slots
+  var g=_bkGroups[dateKey];
+  if(!g)return;
+  var d=new Date(dateKey+'T00:00:00');
   var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  btn.textContent='Confirm: '+days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' at '+time;
+  var daysFull=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var html='<div style="font-size:11px;font-weight:700;color:var(--goldt);margin-bottom:8px;padding-bottom:4px;border-bottom:0.5px solid var(--b)">'+daysFull[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' — available times</div>';
+  html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">';
+  g.times.forEach(function(t){
+    html+='<div onclick="bkPickTime(this,\''+t+'\')" style="background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--mono);transition:all .15s" onmouseover="if(!this.classList.contains(\'bk-tsel\'))this.style.borderColor=\'var(--gold)\'" onmouseout="if(!this.classList.contains(\'bk-tsel\'))this.style.borderColor=\'var(--b)\'">'+t+'</div>';
+  });
+  html+='</div>';
+  document.getElementById('bk-times').innerHTML=html;
+}
+
+function bkPickTime(el,time){
+  _bkSelectedTime=time;
+  // Highlight selected time
+  document.querySelectorAll('.bk-tsel').forEach(function(s){s.classList.remove('bk-tsel');s.style.borderColor='var(--b)';s.style.background='var(--bg)';s.style.color='var(--text)';});
+  el.classList.add('bk-tsel');el.style.borderColor='var(--gold)';el.style.background='var(--gold)';el.style.color='#07090f';
+  // Show details form
+  var d=new Date(_bkSelectedDate+'T00:00:00');
+  var daysFull=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var niceSlot=daysFull[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' at '+time;
+  var det=document.getElementById('bk-details');
+  det.style.display='block';
+  det.innerHTML=
+    '<div style="border-top:0.5px solid var(--b);padding-top:16px;margin-top:4px">'+
+      '<div style="font-size:12px;font-weight:700;color:var(--goldt);margin-bottom:12px">'+niceSlot+' · 30 min</div>'+
+      '<div style="font-size:12px;color:var(--ts);margin-bottom:10px">Enter your details to confirm:</div>'+
+      '<input id="bkp-name" placeholder="Your name *" style="width:100%;background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--body);font-size:13px;margin-bottom:8px;box-sizing:border-box">'+
+      '<input id="bkp-email" type="email" placeholder="Email address *" style="width:100%;background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--body);font-size:13px;margin-bottom:8px;box-sizing:border-box">'+
+      '<input id="bkp-org" placeholder="Organisation (optional)" style="width:100%;background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--body);font-size:13px;margin-bottom:8px;box-sizing:border-box">'+
+      '<textarea id="bkp-notes" placeholder="Any notes for the call (optional)..." style="width:100%;background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--body);font-size:12px;resize:vertical;min-height:50px;box-sizing:border-box;margin-bottom:10px"></textarea>'+
+      '<button class="eoi-submit" id="bkp-confirm" style="width:100%" onclick="confirmBooking()">Confirm: '+niceSlot+'</button>'+
+      '<div id="bkp-confirm-err" style="color:var(--red);font-size:12px;margin-top:6px;display:none"></div>'+
+    '</div>';
+  // Scroll details into view
+  det.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function confirmBooking(){
+  var name=(document.getElementById('bkp-name').value||'').trim();
+  var email=(document.getElementById('bkp-email').value||'').trim();
+  var org=(document.getElementById('bkp-org').value||'').trim();
+  var notes=(document.getElementById('bkp-notes').value||'').trim();
   var btn=document.getElementById('bkp-confirm');
   var err=document.getElementById('bkp-confirm-err');
-  btn.disabled=true;btn.textContent='Confirming...';err.style.display='none';
-  fetch('https://crm.litdaq.com/api/book/'+_bkToken,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({date:_bkSelectedDate,time:_bkSelectedTime,notes:document.getElementById('bkp-notes').value})
+
+  if(!name||!email){err.textContent='Please enter your name and email.';err.style.display='block';return;}
+  if(!email.includes('@')){err.textContent='Please enter a valid email address.';err.style.display='block';return;}
+  err.style.display='none';
+  btn.disabled=true;btn.textContent='Confirming...';
+
+  // If we have a token (email invite flow), confirm via existing endpoint
+  if(_bkToken){
+    fetch('https://crm.litdaq.com/api/book/'+_bkToken,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({date:_bkSelectedDate,time:_bkSelectedTime,notes:notes})
+    }).then(function(r){return r.json().then(function(d){return{status:r.status,data:d}})})
+    .then(function(res){
+      if(res.status!==200){err.textContent=res.data.error||'Something went wrong';err.style.display='block';btn.disabled=false;btn.textContent='Confirm Booking';return;}
+      bkShowConfirmed(_bkSelectedDate,_bkSelectedTime,res.data.zoom_link);
+    }).catch(function(){err.textContent='Network error. Please try again.';err.style.display='block';btn.disabled=false;btn.textContent='Confirm Booking';});
+    return;
+  }
+
+  // Walk-in flow: create + confirm in one call
+  fetch('https://crm.litdaq.com/api/book/public',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:name,email:email,organisation:org,date:_bkSelectedDate,time:_bkSelectedTime,notes:notes})
   }).then(function(r){return r.json().then(function(d){return{status:r.status,data:d}})})
   .then(function(res){
-    if(res.status!==200){
-      err.textContent=res.data.error||'Something went wrong';err.style.display='block';
-      btn.disabled=false;btn.textContent='Confirm Booking';return;
-    }
-    var d=new Date(_bkSelectedDate+'T00:00:00');
-    var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var niceDate=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
-    document.getElementById('booking-content').innerHTML=
-      '<div style="text-align:center;padding:28px 20px">'+
-        '<div style="font-size:48px;margin-bottom:12px;color:var(--green)">&#10003;</div>'+
-        '<div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">BOOKING CONFIRMED</div>'+
-        '<div style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--goldt);margin:8px 0">'+niceDate+'</div>'+
-        '<div style="font-size:24px;font-weight:800;margin:4px 0">'+_bkSelectedTime+'</div>'+
-        '<div style="font-size:12px;color:var(--ts);margin-top:4px">30 minutes</div>'+
-        '<div style="margin-top:16px;font-size:13px;color:var(--ts)">The Trade Desk will call you at the scheduled time.<br>A confirmation email has been sent.</div>'+
-      '</div>';
-  }).catch(function(){
-    err.textContent='Network error. Please try again.';err.style.display='block';
-    btn.disabled=false;btn.textContent='Confirm Booking';
-  });
+    if(res.status!==200){err.textContent=res.data.error||'Something went wrong';err.style.display='block';btn.disabled=false;btn.textContent='Confirm Booking';return;}
+    bkShowConfirmed(_bkSelectedDate,_bkSelectedTime,res.data.zoom_link);
+  }).catch(function(){err.textContent='Network error. Please try again.';err.style.display='block';btn.disabled=false;btn.textContent='Confirm Booking';});
 }
 
-// ── AUTO-DETECT BOOKING TOKEN IN URL ──
-// Links like litdaq.com#book/abc123 skip the gate and go straight to the calendar
+function bkShowConfirmed(date,time,zoomLink){
+  var d=new Date(date+'T00:00:00');
+  var daysFull=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var niceDate=daysFull[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+  var zoomHtml=zoomLink?'<div style="margin-top:14px"><a href="'+zoomLink+'" target="_blank" style="display:inline-block;background:#2D8CFF;color:#fff;font-weight:700;font-size:13px;padding:10px 20px;border-radius:8px;text-decoration:none">Join Zoom Meeting</a><div style="margin-top:6px;font-size:11px;color:var(--tm);word-break:break-all">'+zoomLink+'</div></div>':'';
+  document.getElementById('booking-content').innerHTML=
+    '<div style="text-align:center;padding:28px 20px">'+
+      '<div style="font-size:48px;margin-bottom:12px;color:var(--green)">&#10003;</div>'+
+      '<div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">BOOKING CONFIRMED</div>'+
+      '<div style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--goldt);margin:8px 0">'+niceDate+'</div>'+
+      '<div style="font-size:24px;font-weight:800;margin:4px 0">'+time+'</div>'+
+      '<div style="font-size:12px;color:var(--ts);margin-top:4px">30 minutes</div>'+
+      zoomHtml+
+      '<div style="margin-top:16px;font-size:13px;color:var(--ts)">The Trade Desk will call you at the scheduled time.<br>A confirmation email has been sent.</div>'+
+    '</div>';
+}
+
+// ── AUTO-DETECT BOOKING HASH IN URL ──
 (function(){
   var hash = window.location.hash;
-  // Handle #book (no token — walk-in) or #book/<token> (email invite)
   if (hash === '#book') {
-    // Skip gate, go straight to booking form
     document.getElementById('gate').style.display='none';
     document.getElementById('portal').style.display='flex';
     showPage('booking', null);
     document.querySelectorAll('.nav-btn').forEach(function(b){ if(b.textContent==='Book a Call') b.classList.add('active'); });
     loadEconData(); fetchNews();
+    bkAutoLoad();
     return;
   }
   var m = hash.match(/^#book\/([a-f0-9]+)$/);
   if (!m) return;
   var token = m[1];
   _bkToken = token;
-  // Skip the gate, enter portal, show booking page
   document.getElementById('gate').style.display='none';
   document.getElementById('portal').style.display='flex';
   showPage('booking', null);
-  // Highlight the nav button
   document.querySelectorAll('.nav-btn').forEach(function(b){ if(b.textContent==='Book a Call') b.classList.add('active'); });
   // Load the booking data from CRM
   var el = document.getElementById('booking-content');
@@ -998,22 +1036,8 @@ function confirmBooking(){
     .then(function(r){ if(r.status===404) throw new Error('not found'); return r.json(); })
     .then(function(data){
       var b = data.booking;
-      // Already confirmed — show confirmation
       if(b.status==='confirmed' && b.booking_date && b.booking_time){
-        var d=new Date(b.booking_date+'T00:00:00');
-        var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-        var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var niceDate=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
-        el.innerHTML=
-          '<div style="text-align:center;padding:28px 20px">'+
-            '<div style="font-size:48px;margin-bottom:12px;color:var(--green)">&#10003;</div>'+
-            '<div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">BOOKING CONFIRMED</div>'+
-            '<div style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--goldt);margin:8px 0">'+niceDate+'</div>'+
-            '<div style="font-size:24px;font-weight:800;margin:4px 0">'+b.booking_time+'</div>'+
-            '<div style="font-size:12px;color:var(--ts);margin-top:4px">30 minutes</div>'+
-            '<div style="margin-top:16px;font-size:13px;color:var(--ts)">The Trade Desk will call you at the scheduled time.</div>'+
-            '<div style="margin-top:12px"><a style="color:var(--goldt);cursor:pointer;font-size:13px" onclick="bookingRescheduleFromToken()">Need to reschedule?</a></div>'+
-          '</div>';
+        bkShowConfirmed(b.booking_date, b.booking_time, b.zoom_link);
         window._tokenBookingSlots = data.available_slots;
         return;
       }
@@ -1021,9 +1045,10 @@ function confirmBooking(){
         el.innerHTML='<div style="text-align:center;padding:28px 20px;color:var(--red)"><div style="font-size:32px;margin-bottom:8px">&#10005;</div>This booking has been cancelled.<br><span style="color:var(--ts);font-size:13px">Please contact tradedesk@litdaq.com to rebook.</span></div>';
         return;
       }
-      // Show slot picker
+      // Show calendar for this token (pre-existing invite)
       window._tokenBookingSlots = data.available_slots;
-      renderBookingSlots(data.available_slots, b.client_name || 'there');
+      _bkSlots = data.available_slots;
+      bkRenderCalendar(data.available_slots);
     })
     .catch(function(e){
       el.innerHTML='<div style="padding:28px 20px;text-align:center;color:var(--red)">Booking not found. Please check your link or contact tradedesk@litdaq.com</div>';
@@ -1032,7 +1057,7 @@ function confirmBooking(){
 
 function bookingRescheduleFromToken(){
   if(window._tokenBookingSlots){
-    renderBookingSlots(window._tokenBookingSlots, 'there');
+    bkRenderCalendar(window._tokenBookingSlots);
   }
 }
 
