@@ -698,7 +698,7 @@ function showRetail(){
 function showPage(id,el){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'))
   if(el)el.classList.add('active')
-  const pages=['overview','about','lbs','economics','news','eoi','contact','privacy','terms','slavery','cookies','risk']
+  const pages=['overview','about','lbs','economics','news','eoi','contact','booking','privacy','terms','slavery','cookies','risk']
   pages.forEach(p=>{ const el=document.getElementById('page-'+p); if(el)el.style.display='none' })
   const target=document.getElementById('page-'+id)
   if(target)target.style.display='flex'
@@ -965,6 +965,65 @@ function confirmBooking(){
     err.textContent='Network error. Please try again.';err.style.display='block';
     btn.disabled=false;btn.textContent='Confirm Booking';
   });
+}
+
+// ── AUTO-DETECT BOOKING TOKEN IN URL ──
+// Links like litdaq.com#book/abc123 skip the gate and go straight to the calendar
+(function(){
+  var hash = window.location.hash;
+  var m = hash.match(/^#book\/([a-f0-9]+)$/);
+  if (!m) return;
+  var token = m[1];
+  _bkToken = token;
+  // Skip the gate, enter portal, show booking page
+  document.getElementById('gate').style.display='none';
+  document.getElementById('portal').style.display='flex';
+  showPage('booking', null);
+  // Highlight the nav button
+  document.querySelectorAll('.nav-btn').forEach(function(b){ if(b.textContent==='Book a Call') b.classList.add('active'); });
+  // Load the booking data from CRM
+  var el = document.getElementById('booking-content');
+  el.innerHTML='<div style="padding:40px;text-align:center;color:var(--ts)">Loading your booking...</div>';
+  fetch('https://crm.litdaq.com/api/book/'+token)
+    .then(function(r){ if(r.status===404) throw new Error('not found'); return r.json(); })
+    .then(function(data){
+      var b = data.booking;
+      // Already confirmed — show confirmation
+      if(b.status==='confirmed' && b.booking_date && b.booking_time){
+        var d=new Date(b.booking_date+'T00:00:00');
+        var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var niceDate=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+        el.innerHTML=
+          '<div style="text-align:center;padding:28px 20px">'+
+            '<div style="font-size:48px;margin-bottom:12px;color:var(--green)">&#10003;</div>'+
+            '<div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">BOOKING CONFIRMED</div>'+
+            '<div style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--goldt);margin:8px 0">'+niceDate+'</div>'+
+            '<div style="font-size:24px;font-weight:800;margin:4px 0">'+b.booking_time+'</div>'+
+            '<div style="font-size:12px;color:var(--ts);margin-top:4px">30 minutes</div>'+
+            '<div style="margin-top:16px;font-size:13px;color:var(--ts)">The Trade Desk will call you at the scheduled time.</div>'+
+            '<div style="margin-top:12px"><a style="color:var(--goldt);cursor:pointer;font-size:13px" onclick="bookingRescheduleFromToken()">Need to reschedule?</a></div>'+
+          '</div>';
+        window._tokenBookingSlots = data.available_slots;
+        return;
+      }
+      if(b.status==='cancelled'){
+        el.innerHTML='<div style="text-align:center;padding:28px 20px;color:var(--red)"><div style="font-size:32px;margin-bottom:8px">&#10005;</div>This booking has been cancelled.<br><span style="color:var(--ts);font-size:13px">Please contact tradedesk@litdaq.com to rebook.</span></div>';
+        return;
+      }
+      // Show slot picker
+      window._tokenBookingSlots = data.available_slots;
+      renderBookingSlots(data.available_slots, b.client_name || 'there');
+    })
+    .catch(function(e){
+      el.innerHTML='<div style="padding:28px 20px;text-align:center;color:var(--red)">Booking not found. Please check your link or contact tradedesk@litdaq.com</div>';
+    });
+})();
+
+function bookingRescheduleFromToken(){
+  if(window._tokenBookingSlots){
+    renderBookingSlots(window._tokenBookingSlots, 'there');
+  }
 }
 
 </script>
