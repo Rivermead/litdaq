@@ -236,6 +236,38 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
   </div>
 </div>
 
+<!-- BOOKING FPO GATE -->
+<div id="book-gate" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:30px 16px;position:relative;overflow:hidden">
+  <div class="grid-bg"></div>
+  <div class="glow"></div>
+  <div style="position:relative;width:100%;max-width:480px">
+    <div style="text-align:center;margin-bottom:20px">
+      <div class="gate-logo" style="justify-content:center">
+        <div class="gate-logo-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f0c96e" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <div class="gate-logo-name">LITDAQ</div>
+      </div>
+    </div>
+    <div style="background:var(--card);border:0.5px solid var(--b);border-radius:16px;overflow:hidden">
+      <div style="padding:24px 24px 16px;text-align:center;border-bottom:0.5px solid var(--b)">
+        <div style="font-family:var(--display);font-size:20px;font-weight:700;margin-bottom:8px">Book a Call</div>
+        <div style="font-size:12px;color:var(--ts);line-height:1.6">Schedule a call with the LITDAQ Trade Desk to discuss investment opportunities.</div>
+      </div>
+      <div style="padding:16px 24px">
+        <div style="display:flex;align-items:flex-start;gap:10px;background:#d4a84308;border:0.5px solid #d4a84322;border-radius:8px;padding:12px 14px;margin-bottom:14px">
+          <div style="width:18px;height:18px;border-radius:50%;background:var(--goldd);border:0.5px solid #d4a84355;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700;color:var(--goldt);margin-top:1px">!</div>
+          <div style="font-size:11px;color:#d4a84388;line-height:1.6"><strong style="color:var(--goldt)">Restricted financial promotion.</strong> This relates to unregulated investments under FSMA 2000, available only to persons permitted under FPO 2005.</div>
+        </div>
+        <div id="book-gate-check" onclick="toggleBookGate()" style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding:12px 14px;border:0.5px solid var(--b);border-radius:8px;transition:all 0.15s;margin-bottom:14px">
+          <div id="book-gate-box" style="width:20px;height:20px;border-radius:5px;border:2px solid #d4a84366;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:12px;font-weight:700;color:#07090f"></div>
+          <div style="font-size:11px;color:var(--ts);line-height:1.6">I confirm I am an <strong>institutional investor, certified high net worth individual, sophisticated investor, or certified restricted investor</strong> under FPO 2005. I understand these investments are unregulated and capital is at risk.</div>
+        </div>
+        <button id="book-gate-btn" onclick="enterBooking()" style="width:100%;padding:12px;background:var(--goldd);border:none;border-radius:8px;font-weight:700;font-size:13px;color:#d4a84366;cursor:not-allowed;font-family:var(--body);transition:all .15s" disabled>Continue to booking →</button>
+        <div style="font-size:9px;color:var(--tm);text-align:center;margin-top:10px;line-height:1.5">By proceeding you confirm eligibility under FPO 2005. This is logged for regulatory compliance.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- PORTAL -->
 <div id="portal" style="display:none;flex-direction:column;min-height:100vh">
   <div class="topbar">
@@ -696,12 +728,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
 </div>
 
 <script>
-// ── EARLY HASH CHECK: hide gate immediately if #book link ──
+// ── EARLY HASH CHECK: show FPO declaration for #book links ──
 (function(){
   var h=window.location.hash;
   if(h==='#book'||h.indexOf('#book/')===0){
     document.getElementById('gate').style.display='none';
-    document.getElementById('portal').style.display='flex';
+    document.getElementById('book-gate').style.display='flex';
   }
 })();
 
@@ -730,6 +762,64 @@ function toggleConfirm(){
   box.classList.toggle('checked',confirmed)
   icon.textContent=confirmed?'✓':''
   btn.classList.toggle('on',confirmed)
+}
+
+var _bookGateConfirmed=false;
+function toggleBookGate(){
+  _bookGateConfirmed=!_bookGateConfirmed;
+  var chk=document.getElementById('book-gate-check');
+  var box=document.getElementById('book-gate-box');
+  var btn=document.getElementById('book-gate-btn');
+  if(_bookGateConfirmed){
+    chk.style.borderColor='var(--gold)';chk.style.background='#d4a84309';
+    box.style.borderColor='var(--gold)';box.style.background='var(--gold)';box.innerHTML='✓';
+    btn.disabled=false;btn.style.background='var(--gold)';btn.style.color='#07090f';btn.style.cursor='pointer';
+  } else {
+    chk.style.borderColor='var(--b)';chk.style.background='';
+    box.style.borderColor='#d4a84366';box.style.background='';box.innerHTML='';
+    btn.disabled=true;btn.style.background='var(--goldd)';btn.style.color='#d4a84366';btn.style.cursor='not-allowed';
+  }
+}
+function enterBooking(){
+  if(!_bookGateConfirmed)return;
+  document.getElementById('book-gate').style.display='none';
+  document.getElementById('portal').style.display='flex';
+  var hash=window.location.hash;
+  if(hash==='#book'){
+    showPage('booking',null);
+    document.querySelectorAll('.nav-btn').forEach(function(b){if(b.textContent==='Book a Call')b.classList.add('active');});
+    loadEconData();fetchNews();
+    bkAutoLoad();
+  } else {
+    // Token flow — trigger the existing hash handler
+    var m=hash.match(/^#book\/([a-f0-9]+)$/);
+    if(m){
+      var token=m[1];
+      _bkToken=token;
+      showPage('booking',null);
+      document.querySelectorAll('.nav-btn').forEach(function(b){if(b.textContent==='Book a Call')b.classList.add('active');});
+      var el=document.getElementById('booking-content');
+      el.innerHTML='<div style="padding:40px;text-align:center;color:var(--ts)">Loading your booking...</div>';
+      fetch('https://crm.litdaq.com/api/book/'+token)
+        .then(function(r){if(r.status===404)throw new Error('not found');return r.json();})
+        .then(function(data){
+          var b=data.booking;
+          if(b.status==='confirmed'&&b.booking_date&&b.booking_time){
+            bkShowConfirmed(b.booking_date,b.booking_time,b.zoom_link);
+            window._tokenBookingSlots=data.available_slots;return;
+          }
+          if(b.status==='cancelled'){
+            el.innerHTML='<div style="text-align:center;padding:28px 20px;color:var(--red)"><div style="font-size:32px;margin-bottom:8px">&#10005;</div>This booking has been cancelled.<br><span style="color:var(--ts);font-size:13px">Please contact tradedesk@litdaq.com to rebook.</span></div>';return;
+          }
+          window._tokenBookingSlots=data.available_slots;
+          _bkSlots=data.available_slots;
+          bkRenderCalendar(data.available_slots);
+        })
+        .catch(function(){
+          el.innerHTML='<div style="padding:28px 20px;text-align:center;color:var(--red)">Booking not found. Please check your link or contact tradedesk@litdaq.com</div>';
+        });
+    }
+  }
 }
 
 function enterPortal(){
@@ -1242,51 +1332,7 @@ function bkShowConfirmed(date,time,zoomLink){
     '</div>';
 }
 
-// ── AUTO-DETECT BOOKING HASH IN URL ──
-(function(){
-  var hash = window.location.hash;
-  if (hash === '#book') {
-    document.getElementById('gate').style.display='none';
-    document.getElementById('portal').style.display='flex';
-    showPage('booking', null);
-    document.querySelectorAll('.nav-btn').forEach(function(b){ if(b.textContent==='Book a Call') b.classList.add('active'); });
-    loadEconData(); fetchNews();
-    bkAutoLoad();
-    return;
-  }
-  var m = hash.match(/^#book\/([a-f0-9]+)$/);
-  if (!m) return;
-  var token = m[1];
-  _bkToken = token;
-  document.getElementById('gate').style.display='none';
-  document.getElementById('portal').style.display='flex';
-  showPage('booking', null);
-  document.querySelectorAll('.nav-btn').forEach(function(b){ if(b.textContent==='Book a Call') b.classList.add('active'); });
-  // Load the booking data from CRM
-  var el = document.getElementById('booking-content');
-  el.innerHTML='<div style="padding:40px;text-align:center;color:var(--ts)">Loading your booking...</div>';
-  fetch('https://crm.litdaq.com/api/book/'+token)
-    .then(function(r){ if(r.status===404) throw new Error('not found'); return r.json(); })
-    .then(function(data){
-      var b = data.booking;
-      if(b.status==='confirmed' && b.booking_date && b.booking_time){
-        bkShowConfirmed(b.booking_date, b.booking_time, b.zoom_link);
-        window._tokenBookingSlots = data.available_slots;
-        return;
-      }
-      if(b.status==='cancelled'){
-        el.innerHTML='<div style="text-align:center;padding:28px 20px;color:var(--red)"><div style="font-size:32px;margin-bottom:8px">&#10005;</div>This booking has been cancelled.<br><span style="color:var(--ts);font-size:13px">Please contact tradedesk@litdaq.com to rebook.</span></div>';
-        return;
-      }
-      // Show calendar for this token (pre-existing invite)
-      window._tokenBookingSlots = data.available_slots;
-      _bkSlots = data.available_slots;
-      bkRenderCalendar(data.available_slots);
-    })
-    .catch(function(e){
-      el.innerHTML='<div style="padding:28px 20px;text-align:center;color:var(--red)">Booking not found. Please check your link or contact tradedesk@litdaq.com</div>';
-    });
-})();
+// ── BOOKING HASH ROUTING (handled by enterBooking() after FPO gate) ──
 
 function bookingRescheduleFromToken(){
   if(window._tokenBookingSlots){
