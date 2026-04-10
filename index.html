@@ -253,6 +253,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
       <button class="nav-btn" onclick="showPage('lbs',this)">LBS listings</button>
       <button class="nav-btn" onclick="showPage('economics',this)">Economics</button>
       <button class="nav-btn" onclick="showPage('news',this)">News</button>
+      <button class="nav-btn" onclick="showPage('booking',this)">Book a Call</button>
       <button class="nav-btn" onclick="showPage('contact',this)">Contact</button>
     </div>
     <div class="topbar-right">
@@ -619,6 +620,33 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
       </div>
     </div>
 
+    <!-- BOOKING PAGE -->
+    <div id="page-booking" style="display:none;flex-direction:column;gap:12px">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Book a call with the Trade Desk</span></div>
+          <div id="booking-content">
+            <div class="eoi-form">
+              <div><div class="eoi-label">Your Name *</div><input class="eoi-input" id="bkp-name" placeholder="Full name"/></div>
+              <div><div class="eoi-label">Email *</div><input class="eoi-input" id="bkp-email" type="email" placeholder="you@firm.com"/></div>
+              <div><div class="eoi-label">Organisation</div><input class="eoi-input" id="bkp-org" placeholder="Company name"/></div>
+              <button class="eoi-submit" id="bkp-next" onclick="bookingLoadSlots()">View available times →</button>
+              <div id="bkp-error" style="color:var(--red);font-size:12px;margin-top:6px;display:none"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="padding:20px">
+          <div style="font-size:10px;font-weight:600;color:var(--ts);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px">TRADE DESK</div>
+          <div style="font-size:13px;color:var(--ts);line-height:2">
+            <strong style="color:var(--text)">Gregg</strong><br>
+            <a href="mailto:tradedesk@litdaq.com" style="color:var(--goldt);text-decoration:none">tradedesk@litdaq.com</a><br><br>
+            Schedule a 30-minute call to discuss investment opportunities, LBS listings, or portfolio allocation.<br><br>
+            <span style="font-size:11px;color:var(--tm)">Available Mon–Fri, 9am–5pm GMT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div class="portal-footer">
@@ -820,6 +848,123 @@ function submitBrochureForm(){
     a.download=file
     a.click()
   },500)
+}
+
+// ── BOOKING ──
+var _bkToken = null;
+var _bkSelectedDate = null, _bkSelectedTime = null;
+
+function bookingLoadSlots(){
+  var name = document.getElementById('bkp-name').value.trim();
+  var email = document.getElementById('bkp-email').value.trim();
+  var org = document.getElementById('bkp-org').value.trim();
+  var errEl = document.getElementById('bkp-error');
+  if(!name||!email){errEl.textContent='Please enter your name and email.';errEl.style.display='block';return}
+  if(!email.includes('@')){errEl.textContent='Please enter a valid email address.';errEl.style.display='block';return}
+  errEl.style.display='none';
+  document.getElementById('bkp-next').textContent='Loading...';
+  document.getElementById('bkp-next').disabled=true;
+
+  // Create booking in CRM + fetch slots in parallel
+  Promise.all([
+    fetch('https://crm.litdaq.com/api/book/public',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:name,email:email,organisation:org})
+    }).then(r=>r.json()),
+    fetch('https://crm.litdaq.com/api/book/slots').then(r=>r.json())
+  ]).then(function(results){
+    var booking = results[0];
+    var slots = results[1];
+    if(!booking.success){
+      errEl.textContent=booking.error||'Something went wrong';errEl.style.display='block';
+      document.getElementById('bkp-next').textContent='View available times →';document.getElementById('bkp-next').disabled=false;
+      return;
+    }
+    _bkToken = booking.token;
+    renderBookingSlots(slots, name);
+  }).catch(function(e){
+    errEl.textContent='Network error. Please try again.';errEl.style.display='block';
+    document.getElementById('bkp-next').textContent='View available times →';document.getElementById('bkp-next').disabled=false;
+  });
+}
+
+function renderBookingSlots(slots, name){
+  var el = document.getElementById('booking-content');
+  if(!slots.length){
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--ts);font-size:13px">No available time slots at the moment. Please email <a href="mailto:tradedesk@litdaq.com" style="color:var(--goldt)">tradedesk@litdaq.com</a></div>';
+    return;
+  }
+  var groups={};
+  slots.forEach(function(s){
+    if(!groups[s.date])groups[s.date]={day:s.day,date:s.date,times:[]};
+    groups[s.date].times.push(s.time);
+  });
+  var html='<div style="padding:16px 20px;font-size:13px;color:var(--ts);margin-bottom:4px">Hi '+name.split(' ')[0]+', pick a time:</div>';
+  html+='<div style="padding:0 20px 20px;max-height:400px;overflow-y:auto">';
+  Object.keys(groups).forEach(function(dk){
+    var g=groups[dk];
+    var d=new Date(dk+'T00:00:00');
+    var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    html+='<div style="margin-bottom:14px">';
+    html+='<div style="font-size:11px;font-weight:700;color:var(--goldt);margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid var(--b)">'+g.day+' '+d.getDate()+' '+months[d.getMonth()]+'</div>';
+    html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    g.times.forEach(function(t){
+      html+='<div onclick="pickBkSlot(this,\''+dk+'\',\''+t+'\')" style="background:var(--bg);border:0.5px solid var(--b);border-radius:6px;padding:7px 12px;cursor:pointer;font-size:12px;font-weight:600;font-family:var(--mono);transition:all .15s" onmouseover="this.style.borderColor=\'var(--gold)\'" onmouseout="if(!this.classList.contains(\'bk-sel\'))this.style.borderColor=\'var(--b)\'">'+t+'</div>';
+    });
+    html+='</div></div>';
+  });
+  html+='</div>';
+  html+='<div style="padding:0 20px 4px"><textarea id="bkp-notes" placeholder="Any notes for the call (optional)..." style="width:100%;background:var(--bg);border:0.5px solid var(--b);border-radius:6px;padding:10px;color:var(--text);font-family:var(--body);font-size:12px;resize:vertical;min-height:50px;box-sizing:border-box"></textarea></div>';
+  html+='<div style="padding:0 20px 20px"><button class="eoi-submit" id="bkp-confirm" style="width:100%;opacity:.4;cursor:not-allowed" disabled onclick="confirmBooking()">Select a time slot</button>';
+  html+='<div id="bkp-confirm-err" style="color:var(--red);font-size:12px;margin-top:6px;display:none"></div></div>';
+  el.innerHTML=html;
+}
+
+function pickBkSlot(el,date,time){
+  document.querySelectorAll('.bk-sel').forEach(function(s){s.classList.remove('bk-sel');s.style.borderColor='var(--b)';s.style.background='var(--bg)';s.style.color='var(--text)'});
+  el.classList.add('bk-sel');
+  el.style.borderColor='var(--gold)';el.style.background='var(--gold)';el.style.color='#07090f';
+  _bkSelectedDate=date;_bkSelectedTime=time;
+  var btn=document.getElementById('bkp-confirm');
+  btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';
+  var d=new Date(date+'T00:00:00');
+  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  btn.textContent='Confirm: '+days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' at '+time;
+}
+
+function confirmBooking(){
+  var btn=document.getElementById('bkp-confirm');
+  var err=document.getElementById('bkp-confirm-err');
+  btn.disabled=true;btn.textContent='Confirming...';err.style.display='none';
+  fetch('https://crm.litdaq.com/api/book/'+_bkToken,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({date:_bkSelectedDate,time:_bkSelectedTime,notes:document.getElementById('bkp-notes').value})
+  }).then(function(r){return r.json().then(function(d){return{status:r.status,data:d}})})
+  .then(function(res){
+    if(res.status!==200){
+      err.textContent=res.data.error||'Something went wrong';err.style.display='block';
+      btn.disabled=false;btn.textContent='Confirm Booking';return;
+    }
+    var d=new Date(_bkSelectedDate+'T00:00:00');
+    var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var niceDate=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+    document.getElementById('booking-content').innerHTML=
+      '<div style="text-align:center;padding:28px 20px">'+
+        '<div style="font-size:48px;margin-bottom:12px;color:var(--green)">&#10003;</div>'+
+        '<div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">BOOKING CONFIRMED</div>'+
+        '<div style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--goldt);margin:8px 0">'+niceDate+'</div>'+
+        '<div style="font-size:24px;font-weight:800;margin:4px 0">'+_bkSelectedTime+'</div>'+
+        '<div style="font-size:12px;color:var(--ts);margin-top:4px">30 minutes</div>'+
+        '<div style="margin-top:16px;font-size:13px;color:var(--ts)">Gregg will call you at the scheduled time.<br>A confirmation email has been sent.</div>'+
+      '</div>';
+  }).catch(function(){
+    err.textContent='Network error. Please try again.';err.style.display='block';
+    btn.disabled=false;btn.textContent='Confirm Booking';
+  });
 }
 
 </script>
