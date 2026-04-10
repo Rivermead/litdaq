@@ -255,11 +255,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
       <button class="nav-btn" onclick="showPage('news',this)">News</button>
       <button class="nav-btn" onclick="showPage('booking',this)">Book a Call</button>
       <button class="nav-btn" onclick="showPage('contact',this)">Contact</button>
+      <button class="nav-btn" id="nav-team" style="display:none" onclick="showPage('team-bookings',this)">Bookings</button>
     </div>
     <div class="topbar-right">
       <div class="live-badge"><div class="live-dot"></div>Live</div>
       <button class="investor-btn" onclick="showPage('eoi',null)">Express interest ↗</button>
       <button class="investor-btn" style="background:transparent;border:0.5px solid #d4a84344;color:var(--goldt)" onclick="showBrochureForm()">⬇ Brochure</button>
+      <button id="team-login-btn" class="investor-btn" style="background:transparent;border:0.5px solid #ffffff22;color:var(--tm);font-size:10px;padding:6px 12px" onclick="showTeamLogin()">Team</button>
     </div>
   </div>
 
@@ -641,6 +643,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
       </div>
     </div>
 
+    <!-- TEAM BOOKINGS PAGE (auth required) -->
+    <div id="page-team-bookings" style="display:none;flex-direction:column;gap:12px">
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">All Bookings</span>
+          <span style="font-size:11px;color:var(--tm)" id="team-user-label"></span>
+        </div>
+        <div id="team-bookings-content" style="padding:20px;text-align:center;color:var(--ts)">Loading...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TEAM LOGIN MODAL -->
+  <div id="team-login-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:var(--card);border:1px solid var(--b);border-radius:14px;padding:28px;width:320px;max-width:90vw">
+      <div style="font-size:14px;font-weight:700;color:var(--goldt);margin-bottom:16px">Team Login</div>
+      <input id="team-user" placeholder="Username" style="width:100%;background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--body);font-size:13px;margin-bottom:8px;box-sizing:border-box">
+      <input id="team-pass" type="password" placeholder="Password" style="width:100%;background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--body);font-size:13px;margin-bottom:12px;box-sizing:border-box" onkeydown="if(event.key==='Enter')teamDoLogin()">
+      <div id="team-login-err" style="color:var(--red);font-size:12px;margin-bottom:8px;display:none"></div>
+      <div style="display:flex;gap:8px">
+        <button class="eoi-submit" style="flex:1" onclick="teamDoLogin()">Login</button>
+        <button style="flex:0;background:transparent;border:1px solid var(--b);border-radius:6px;padding:8px 16px;color:var(--ts);cursor:pointer;font-family:var(--body)" onclick="document.getElementById('team-login-modal').style.display='none'">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <div class="portal-footer">
@@ -692,11 +719,12 @@ function showRetail(){
 function showPage(id,el){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'))
   if(el)el.classList.add('active')
-  const pages=['overview','about','lbs','economics','news','eoi','contact','booking','privacy','terms','slavery','cookies','risk']
+  const pages=['overview','about','lbs','economics','news','eoi','contact','booking','team-bookings','privacy','terms','slavery','cookies','risk']
   pages.forEach(p=>{ const el=document.getElementById('page-'+p); if(el)el.style.display='none' })
   const target=document.getElementById('page-'+id)
   if(target)target.style.display='flex'
   if(id==='booking' && !_bkToken) bkAutoLoad();
+  if(id==='team-bookings') teamLoadBookings();
 }
 
 function renderNews(items){
@@ -843,6 +871,137 @@ function submitBrochureForm(){
     a.download=file
     a.click()
   },500)
+}
+
+// ── TEAM LOGIN & BOOKINGS ──
+var _teamToken = localStorage.getItem('litdaq_team_token') || null;
+var _teamUser = localStorage.getItem('litdaq_team_user') || null;
+
+function teamInit(){
+  if(_teamToken){
+    document.getElementById('nav-team').style.display='';
+    document.getElementById('team-login-btn').textContent='Logout';
+    document.getElementById('team-login-btn').onclick=teamLogout;
+    if(document.getElementById('team-user-label'))
+      document.getElementById('team-user-label').textContent='Logged in as '+_teamUser;
+  }
+}
+teamInit();
+
+function showTeamLogin(){
+  if(_teamToken){teamLogout();return;}
+  var m=document.getElementById('team-login-modal');
+  m.style.display='flex';
+  document.getElementById('team-user').value='';
+  document.getElementById('team-pass').value='';
+  document.getElementById('team-login-err').style.display='none';
+  document.getElementById('team-user').focus();
+}
+
+function teamDoLogin(){
+  var user=document.getElementById('team-user').value.trim();
+  var pass=document.getElementById('team-pass').value;
+  var err=document.getElementById('team-login-err');
+  if(!user||!pass){err.textContent='Enter username and password';err.style.display='block';return;}
+  err.style.display='none';
+  fetch('https://crm.litdaq.com/api/login',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:user,password:pass})
+  }).then(function(r){return r.json()})
+  .then(function(d){
+    if(!d.success){err.textContent='Invalid credentials';err.style.display='block';return;}
+    _teamToken=d.token;_teamUser=d.username;
+    localStorage.setItem('litdaq_team_token',d.token);
+    localStorage.setItem('litdaq_team_user',d.username);
+    document.getElementById('team-login-modal').style.display='none';
+    document.getElementById('nav-team').style.display='';
+    document.getElementById('team-login-btn').textContent='Logout';
+    document.getElementById('team-login-btn').onclick=teamLogout;
+    showPage('team-bookings',document.getElementById('nav-team'));
+    document.getElementById('nav-team').classList.add('active');
+  }).catch(function(){err.textContent='Network error';err.style.display='block';});
+}
+
+function teamLogout(){
+  fetch('https://crm.litdaq.com/api/logout',{method:'POST',headers:{'X-Auth-Token':_teamToken}}).catch(function(){});
+  _teamToken=null;_teamUser=null;
+  localStorage.removeItem('litdaq_team_token');
+  localStorage.removeItem('litdaq_team_user');
+  document.getElementById('nav-team').style.display='none';
+  document.getElementById('team-login-btn').textContent='Team';
+  document.getElementById('team-login-btn').onclick=showTeamLogin;
+  showPage('overview',document.querySelector('.nav-btn'));
+}
+
+function teamLoadBookings(){
+  var el=document.getElementById('team-bookings-content');
+  if(!_teamToken){el.innerHTML='<div style="padding:20px;color:var(--red)">Please log in first.</div>';return;}
+  if(document.getElementById('team-user-label'))
+    document.getElementById('team-user-label').textContent='Logged in as '+_teamUser;
+  el.innerHTML='<div style="padding:20px;text-align:center;color:var(--ts)">Loading bookings...</div>';
+  fetch('https://crm.litdaq.com/api/bookings',{headers:{'X-Auth-Token':_teamToken}})
+  .then(function(r){
+    if(r.status===401){teamLogout();return null;}
+    return r.json();
+  })
+  .then(function(bookings){
+    if(!bookings)return;
+    if(!bookings.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--ts)">No bookings yet.</div>';return;}
+    var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var now=new Date().toISOString().slice(0,10);
+    // Split into upcoming and past
+    var upcoming=[],past=[];
+    bookings.forEach(function(b){
+      if(b.status==='cancelled')return;
+      if(b.booking_date && b.booking_date>=now) upcoming.push(b);
+      else if(b.booking_date) past.push(b);
+      else upcoming.push(b); // unscheduled
+    });
+    var html='';
+    // Upcoming
+    html+='<div style="padding:16px 20px 8px;font-size:11px;font-weight:700;color:var(--goldt);text-transform:uppercase;letter-spacing:.5px">Upcoming ('+upcoming.length+')</div>';
+    html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+    html+='<tr style="border-bottom:1px solid var(--b)"><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Date & Time</th><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Client</th><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Email</th><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Org</th><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Status</th><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Zoom</th></tr>';
+    upcoming.forEach(function(b){
+      var dateStr='—';
+      if(b.booking_date){
+        var d=new Date(b.booking_date+'T00:00:00');
+        dateStr=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
+      }
+      var timeStr=b.booking_time||'—';
+      var statusColor=b.status==='confirmed'?'var(--green)':'var(--goldt)';
+      var zoomCell=b.zoom_link?'<a href="'+b.zoom_link+'" target="_blank" style="color:#2D8CFF;text-decoration:none;font-weight:600">Join</a>':'—';
+      html+='<tr style="border-bottom:0.5px solid var(--b)">';
+      html+='<td style="padding:10px 12px;white-space:nowrap"><span style="color:var(--text);font-weight:600">'+dateStr+'</span> <span style="color:var(--tm)">'+timeStr+'</span></td>';
+      html+='<td style="padding:10px 12px;color:var(--text)">'+(b.client_name||'—')+'</td>';
+      html+='<td style="padding:10px 12px;color:var(--ts)">'+(b.client_email||'—')+'</td>';
+      html+='<td style="padding:10px 12px;color:var(--ts)">'+(b.client_org||'—')+'</td>';
+      html+='<td style="padding:10px 12px"><span style="color:'+statusColor+';font-weight:600;text-transform:capitalize">'+b.status+'</span></td>';
+      html+='<td style="padding:10px 12px">'+zoomCell+'</td>';
+      html+='</tr>';
+    });
+    html+='</table></div>';
+    // Past
+    if(past.length){
+      html+='<div style="padding:16px 20px 8px;font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-top:8px">Past ('+past.length+')</div>';
+      html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;opacity:.6">';
+      past.forEach(function(b){
+        var d=new Date(b.booking_date+'T00:00:00');
+        var dateStr=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
+        html+='<tr style="border-bottom:0.5px solid var(--b)">';
+        html+='<td style="padding:8px 12px;white-space:nowrap">'+dateStr+' <span style="color:var(--tm)">'+(b.booking_time||'')+'</span></td>';
+        html+='<td style="padding:8px 12px">'+(b.client_name||'—')+'</td>';
+        html+='<td style="padding:8px 12px;color:var(--ts)">'+(b.client_email||'—')+'</td>';
+        html+='<td style="padding:8px 12px;color:var(--ts)">'+(b.client_org||'—')+'</td>';
+        html+='<td style="padding:8px 12px;color:var(--tm);text-transform:capitalize">'+b.status+'</td>';
+        html+='<td style="padding:8px 12px">—</td>';
+        html+='</tr>';
+      });
+      html+='</table></div>';
+    }
+    el.innerHTML=html;
+  }).catch(function(){el.innerHTML='<div style="padding:20px;color:var(--red)">Failed to load bookings.</div>';});
 }
 
 // ── BOOKING (Calendly-style: calendar first, details on confirm) ──
