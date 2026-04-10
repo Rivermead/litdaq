@@ -971,6 +971,16 @@ function confirmBooking(){
 // Links like litdaq.com#book/abc123 skip the gate and go straight to the calendar
 (function(){
   var hash = window.location.hash;
+  // Handle #book (no token — walk-in) or #book/<token> (email invite)
+  if (hash === '#book') {
+    // Skip gate, go straight to booking form
+    document.getElementById('gate').style.display='none';
+    document.getElementById('portal').style.display='flex';
+    showPage('booking', null);
+    document.querySelectorAll('.nav-btn').forEach(function(b){ if(b.textContent==='Book a Call') b.classList.add('active'); });
+    loadEconData(); fetchNews();
+    return;
+  }
   var m = hash.match(/^#book\/([a-f0-9]+)$/);
   if (!m) return;
   var token = m[1];
