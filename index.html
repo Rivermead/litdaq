@@ -645,10 +645,29 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14
 
     <!-- TEAM BOOKINGS PAGE (auth required) -->
     <div id="page-team-bookings" style="display:none;flex-direction:column;gap:12px">
+      <!-- Send Invite Card -->
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Send Booking Invite</span>
+          <span style="font-size:11px;color:var(--tm)" id="team-user-label"></span>
+        </div>
+        <div style="padding:16px 20px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <input id="inv-name" placeholder="Client name *" style="flex:1;min-width:140px;background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--text);font-family:var(--body);font-size:12px;box-sizing:border-box">
+            <input id="inv-email" type="email" placeholder="Client email *" style="flex:1;min-width:180px;background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--text);font-family:var(--body);font-size:12px;box-sizing:border-box">
+            <input id="inv-org" placeholder="Organisation" style="flex:1;min-width:140px;background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--text);font-family:var(--body);font-size:12px;box-sizing:border-box">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="eoi-submit" style="padding:9px 20px;font-size:12px" onclick="teamSendInvite()">Send Invite</button>
+            <div id="inv-status" style="font-size:12px;display:none"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Bookings Table -->
       <div class="card">
         <div class="card-hdr">
           <span class="card-title">All Bookings</span>
-          <span style="font-size:11px;color:var(--tm)" id="team-user-label"></span>
+          <button style="background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:5px 12px;color:var(--ts);font-size:11px;cursor:pointer;font-family:var(--body)" onclick="teamLoadBookings()">Refresh</button>
         </div>
         <div id="team-bookings-content" style="padding:20px;text-align:center;color:var(--ts)">Loading...</div>
       </div>
@@ -933,6 +952,28 @@ function teamLogout(){
   showPage('overview',document.querySelector('.nav-btn'));
 }
 
+function teamSendInvite(){
+  var name=document.getElementById('inv-name').value.trim();
+  var email=document.getElementById('inv-email').value.trim();
+  var org=document.getElementById('inv-org').value.trim();
+  var st=document.getElementById('inv-status');
+  if(!name||!email){st.textContent='Name and email required';st.style.color='var(--red)';st.style.display='inline';return;}
+  st.textContent='Sending...';st.style.color='var(--goldt)';st.style.display='inline';
+  fetch('https://crm.litdaq.com/api/bookings',{
+    method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':_teamToken},
+    body:JSON.stringify({name:name,email:email,organisation:org})
+  }).then(function(r){return r.json()})
+  .then(function(d){
+    if(!d.success){st.textContent=d.error||'Failed';st.style.color='var(--red)';return;}
+    var link='https://www.litdaq.com#book/'+d.token;
+    st.innerHTML='<span style="color:var(--green)">Invite sent to '+email+'</span> &nbsp; <a style="color:var(--goldt);cursor:pointer;text-decoration:underline" onclick="navigator.clipboard.writeText(\''+link+'\');this.textContent=\'Copied!\'">Copy link</a>';
+    document.getElementById('inv-name').value='';
+    document.getElementById('inv-email').value='';
+    document.getElementById('inv-org').value='';
+    teamLoadBookings();
+  }).catch(function(){st.textContent='Network error';st.style.color='var(--red)';});
+}
+
 function teamLoadBookings(){
   var el=document.getElementById('team-bookings-content');
   if(!_teamToken){el.innerHTML='<div style="padding:20px;color:var(--red)">Please log in first.</div>';return;}
@@ -962,7 +1003,8 @@ function teamLoadBookings(){
     // Upcoming
     html+='<div style="padding:16px 20px 8px;font-size:11px;font-weight:700;color:var(--goldt);text-transform:uppercase;letter-spacing:.5px">Upcoming ('+upcoming.length+')</div>';
     html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
-    html+='<tr style="border-bottom:1px solid var(--b)"><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Date & Time</th><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Client</th><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Email</th><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Org</th><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Status</th><th style="text-align:left;padding:8px 12px;color:var(--tm);font-weight:600">Zoom</th></tr>';
+    var thStyle='text-align:left;padding:8px 12px;color:var(--tm);font-weight:600;font-size:11px';
+    html+='<tr style="border-bottom:1px solid var(--b)"><th style="'+thStyle+'">Date & Time</th><th style="'+thStyle+'">Client</th><th style="'+thStyle+'">Email</th><th style="'+thStyle+'">Org</th><th style="'+thStyle+'">Status</th><th style="'+thStyle+'">Sent by</th><th style="'+thStyle+'">Actions</th></tr>';
     upcoming.forEach(function(b){
       var dateStr='—';
       if(b.booking_date){
@@ -970,15 +1012,22 @@ function teamLoadBookings(){
         dateStr=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
       }
       var timeStr=b.booking_time||'—';
-      var statusColor=b.status==='confirmed'?'var(--green)':'var(--goldt)';
-      var zoomCell=b.zoom_link?'<a href="'+b.zoom_link+'" target="_blank" style="color:#2D8CFF;text-decoration:none;font-weight:600">Join</a>':'—';
+      var statusColor=b.status==='confirmed'?'var(--green)':b.status==='invited'?'var(--blue)':'var(--goldt)';
+      var sentBy=b.created_by||'—';
+      if(sentBy==='website') sentBy='<span style="color:var(--tm)">website</span>';
+      else sentBy='<span style="color:var(--ts)">'+sentBy+'</span>';
+      var actions='';
+      if(b.zoom_link) actions+='<a href="'+b.zoom_link+'" target="_blank" style="color:#2D8CFF;text-decoration:none;font-weight:600;font-size:11px">Zoom</a> ';
+      var invLink='https://www.litdaq.com#book/'+b.token;
+      actions+='<a style="color:var(--goldt);cursor:pointer;font-size:11px;text-decoration:none" onclick="navigator.clipboard.writeText(\''+invLink+'\');this.textContent=\'Copied!\';setTimeout(function(){this.textContent=\'Link\'},1500)">Link</a>';
       html+='<tr style="border-bottom:0.5px solid var(--b)">';
       html+='<td style="padding:10px 12px;white-space:nowrap"><span style="color:var(--text);font-weight:600">'+dateStr+'</span> <span style="color:var(--tm)">'+timeStr+'</span></td>';
       html+='<td style="padding:10px 12px;color:var(--text)">'+(b.client_name||'—')+'</td>';
-      html+='<td style="padding:10px 12px;color:var(--ts)">'+(b.client_email||'—')+'</td>';
+      html+='<td style="padding:10px 12px;color:var(--ts);font-size:11px">'+(b.client_email||'—')+'</td>';
       html+='<td style="padding:10px 12px;color:var(--ts)">'+(b.client_org||'—')+'</td>';
-      html+='<td style="padding:10px 12px"><span style="color:'+statusColor+';font-weight:600;text-transform:capitalize">'+b.status+'</span></td>';
-      html+='<td style="padding:10px 12px">'+zoomCell+'</td>';
+      html+='<td style="padding:10px 12px"><span style="color:'+statusColor+';font-weight:600;text-transform:capitalize;font-size:11px">'+b.status+'</span></td>';
+      html+='<td style="padding:10px 12px">'+sentBy+'</td>';
+      html+='<td style="padding:10px 12px;white-space:nowrap">'+actions+'</td>';
       html+='</tr>';
     });
     html+='</table></div>';
@@ -989,12 +1038,14 @@ function teamLoadBookings(){
       past.forEach(function(b){
         var d=new Date(b.booking_date+'T00:00:00');
         var dateStr=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
+        var sentBy=b.created_by||'—';
         html+='<tr style="border-bottom:0.5px solid var(--b)">';
         html+='<td style="padding:8px 12px;white-space:nowrap">'+dateStr+' <span style="color:var(--tm)">'+(b.booking_time||'')+'</span></td>';
         html+='<td style="padding:8px 12px">'+(b.client_name||'—')+'</td>';
         html+='<td style="padding:8px 12px;color:var(--ts)">'+(b.client_email||'—')+'</td>';
         html+='<td style="padding:8px 12px;color:var(--ts)">'+(b.client_org||'—')+'</td>';
         html+='<td style="padding:8px 12px;color:var(--tm);text-transform:capitalize">'+b.status+'</td>';
+        html+='<td style="padding:8px 12px;color:var(--tm)">'+sentBy+'</td>';
         html+='<td style="padding:8px 12px">—</td>';
         html+='</tr>';
       });
